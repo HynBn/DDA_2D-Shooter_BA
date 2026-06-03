@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class Health : MonoBehaviour
 {
+    public enum EntityType {Player, Enemy};
+    public EntityType entityType;
 
     public float maxHealth = 100f;
     private float currentHealth;
@@ -16,16 +18,30 @@ public class Health : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void TakeDamage(float damageAmount)
     {
         currentHealth -= damageAmount;
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+        if (entityType == EntityType.Player)
+        {
+            if (DataTracker.Instance != null)
+            {
+                DataTracker.Instance.RegisterPlayerDamageTaken(damageAmount);
+            }
+        } else if (entityType == EntityType.Enemy)
+        {
+            if (DataTracker.Instance != null)
+            {
+                DataTracker.Instance.RegisterPlayerHit();
+            }
+
+            LocalEnemyTracker myLocalTracker = GetComponent<LocalEnemyTracker>();
+            if (myLocalTracker != null)
+            {
+                myLocalTracker.RegisterEnemyDamageTaken(damageAmount);
+            }
+        }
 
         if (currentHealth <= 0)
         {

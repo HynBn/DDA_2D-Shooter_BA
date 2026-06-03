@@ -62,6 +62,13 @@ public class Shooting : MonoBehaviour
 
         GameObject bullet = Instantiate(bulletPrefab, firepoint.position, finalRotation);
         Rigidbody2D rb = bullet.GetComponent<Rigidbody2D>();
+
         rb.AddForce(bullet.transform.up * bulletForce, ForceMode2D.Impulse);
+        
+        if (DataTracker.Instance != null)
+        {
+            DataTracker.Instance.RegisterPlayerShot();           
+        }
+
     }
 }

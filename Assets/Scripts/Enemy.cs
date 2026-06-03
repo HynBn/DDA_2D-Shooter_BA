@@ -1,38 +1,46 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem.Controls;
 
 public class Enemy : MonoBehaviour
 {
     public Transform player;
-
-    public float moveSpeed;
-    public float attackRange;
-    public float retreatRange;
-
-    public float retreatDashChance = 0.3f;
-    private float retreatDashCheckTimer;
-
-    public float awareRadius;
-    public float dodgeSpeed;
-    public float dodgeDuration;
-    public float dodgeCooldown;
-
     public GameObject bulletPrefab;
     public Transform firepoint;
-    public float bulletForce;
-    public float fireRate;
-    public float spread;
-
-    public float obstacleAvoidRange;
 
     public enum State {Chase, Attack, Retreat, Dodge}
     public State currentState;
+    public float obstacleAvoidRange;
+
+    [Header("State Radius")]
+    public float awareRadius = 5f;
+    public float attackRange = 8f;
+    public float retreatRange = 3f;
+
+    [Header("Fair Parameters")]
+    public float spread = 10f;
+    public float dashSpeed = 15f;
+    public float retreatDashChance = 0.3f;
+    public float strafeSpeed = 0.3f;
+    public float strafeChangeInterval = 1f;
+    public float dodgeChance = 0.8f;
+
+    [Header("Unfair Parameters")]
+    public float moveSpeed = 3f;
+    public float dashDuration = 0.2f;
+    public float dashCooldown = 2f;
+    public float bulletForce = 10f;
+    public float fireRate = 2f;
+
+    private float retreatDashCheckTimer;
+    private float fireCooldownTimer;
 
     private float dodgeTimer;
     private float dodgeCooldownTimer;
     private Vector2 dodgeDir;
 
-    private float fireCooldownTimer;
+    private float strafeTimer;
+    private int strafeDirection = 1; 
 
     void Start()
     {
@@ -97,7 +105,6 @@ public class Enemy : MonoBehaviour
         Vector2 finalDirection = GetAvoidanceDirection(directionToPlayer);
 
         transform.position += (Vector3)(finalDirection * moveSpeed * Time.deltaTime);
-        //transform.position = Vector2.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
         RotateTowardsPlayer();
         Shoot();
     }
@@ -105,8 +112,20 @@ public class Enemy : MonoBehaviour
     void AttackPlayer()
     {
         RotateTowardsPlayer();
-
         Shoot();
+
+        if (strafeSpeed > 0)
+        {
+            strafeTimer -= Time.deltaTime;
+            if(strafeTimer <= 0)
+            {
+                strafeDirection *= -1;
+                strafeTimer = strafeChangeInterval;
+            }
+        }
+
+        Vector3 strafeVector = transform.right * strafeDirection * strafeSpeed * Time.deltaTime;
+        transform.position += strafeVector;
     }
 
     void RetreatFromPlayer()
@@ -124,8 +143,8 @@ public class Enemy : MonoBehaviour
                 dodgeDir = Quaternion.Euler(0, 0, randomAngle) * baseDirectionAway;
                 
                 currentState = State.Dodge;
-                dodgeTimer = dodgeDuration;
-                dodgeCooldownTimer = dodgeCooldown; 
+                dodgeTimer = dashDuration;
+                dodgeCooldownTimer = dashCooldown; 
                 return; 
             }
         }
@@ -133,14 +152,13 @@ public class Enemy : MonoBehaviour
         Vector2 finalDirection = GetAvoidanceDirection(directionAway);
         
         transform.position += (Vector3)(finalDirection * moveSpeed * Time.deltaTime);
-        //transform.position = Vector2.MoveTowards(transform.position, player.position, -moveSpeed * Time.deltaTime);
         RotateTowardsPlayer();
         Shoot();
     }
 
     void DodgeAttack()
     {
-        transform.position = Vector2.MoveTowards(transform.position, (Vector2)transform.position + dodgeDir, dodgeSpeed * Time.deltaTime);
+        transform.position = Vector2.MoveTowards(transform.position, (Vector2)transform.position + dodgeDir, dashSpeed * Time.deltaTime);
     }
 
     void RotateTowardsPlayer()
@@ -163,6 +181,12 @@ public class Enemy : MonoBehaviour
             rb.AddForce(bullet.transform.up * bulletForce, ForceMode2D.Impulse);
 
             fireCooldownTimer = fireRate;
+            
+            LocalEnemyTracker myLocalTracker = GetComponent<LocalEnemyTracker>();
+            if (myLocalTracker != null)
+            {
+                myLocalTracker.RegisterEnemyShot();
+            }
         }
     }
 
@@ -176,19 +200,68 @@ public class Enemy : MonoBehaviour
                 Rigidbody2D bulletRb = hit.GetComponent<Rigidbody2D>();
                 if (bulletRb != null && bulletRb.linearVelocity.magnitude > 0.1f)
                 {
-                    dodgeDir = Vector2.Perpendicular(bulletRb.linearVelocity).normalized;
-                    if (Random.value > 0.5f)
+                    if(Random.value > dodgeChance) return;                    
+
+                    Vector2 safeDodge = GetSmartDodgeDirection(hit.transform.position, bulletRb.linearVelocity);
+                    if (safeDodge != Vector2.zero)
                     {
-                        dodgeDir *= -1;
+                        dodgeDir = safeDodge;
+                        currentState = State.Dodge;
+                        dodgeTimer = dashDuration;
+                        dodgeCooldownTimer = dashCooldown;
+                    } else
+                    {
+                        transform.position +=(Vector3)(safeDodge * moveSpeed * Time.deltaTime);
                     }
-                    
-                    currentState = State.Dodge;
-                    dodgeTimer = dodgeDuration;
-                    dodgeCooldownTimer = dodgeCooldown;
                     break;
                 }
             }
         }
+    }
+
+    Vector2 GetSmartDodgeDirection(Vector3 bulletPos, Vector2 bulletVelocity)
+    {
+        Vector2 leftDodge = new Vector2(-bulletVelocity.y, bulletVelocity.x).normalized;
+        Vector2 rightDodge = new Vector2(bulletVelocity.y, -bulletVelocity.x).normalized;
+        
+        Vector2 dirToBullet = ((Vector2)bulletPos - (Vector2)transform.position).normalized;
+        
+        Vector2 preferredDodge;
+        Vector2 alternativeDodge;
+
+        if (Vector2.Dot(leftDodge, dirToBullet) > 0)
+        {
+            preferredDodge = rightDodge;
+            alternativeDodge = leftDodge;
+        } else
+        {
+            preferredDodge = leftDodge;
+            alternativeDodge = rightDodge;
+        }
+
+        float expectedDodgeDistance = dashSpeed * dashDuration;
+
+        if (IsDirectionClear(preferredDodge, expectedDodgeDistance)) return preferredDodge;
+        if (IsDirectionClear(alternativeDodge, expectedDodgeDistance)) return alternativeDodge;
+
+        Vector2 backDodge = bulletVelocity.normalized;
+        if (IsDirectionClear(backDodge, expectedDodgeDistance)) return backDodge;
+
+        return Vector2.zero;
+    }
+
+    bool IsDirectionClear(Vector2 dir, float distance)
+    {
+        RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, 0.5f, dir, distance);
+        foreach (RaycastHit2D hit in hits)
+        {
+            if (hit.collider != null && hit.collider.CompareTag("Wall"))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     bool HasLineOfSight()
