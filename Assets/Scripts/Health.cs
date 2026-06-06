@@ -6,7 +6,7 @@ public class Health : MonoBehaviour
     public enum EntityType {Player, Enemy};
     public EntityType entityType;
 
-    public float maxHealth = 100f;
+    public float maxHealth = 150f;
     private float currentHealth;
 
     public event Action<float, float> OnHealthChanged;
@@ -45,7 +45,20 @@ public class Health : MonoBehaviour
 
         if (currentHealth <= 0)
         {
-            Destroy(gameObject);
+            bool isPlayer = gameObject.CompareTag("Player");
+            gameObject.SetActive(false);
+
+            if(GameManager.Instance != null)
+            {
+                GameManager.Instance.EntityDeath(isPlayer);
+            }
         }
+    }
+
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+        gameObject.SetActive(true);
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 }

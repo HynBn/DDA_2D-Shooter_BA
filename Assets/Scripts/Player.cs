@@ -37,7 +37,14 @@ public class Player : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        
+        if (cam == null)
+        {
+            cam = Camera.main;
+        }
+        else if (cam == null)
+        {
+            Debug.LogError("Player script requires a reference to a Camera.");
+        }
     }
 
     private void OnEnable()
@@ -59,6 +66,10 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.currentState != GameManager.GameState.Playing)
+        {
+            return;
+        }
         movement = moveAction.ReadValue<Vector2>();
 
         Vector2 screenPos = mouseAction.ReadValue<Vector2>();
@@ -109,7 +120,11 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-
+        if (GameManager.Instance != null && GameManager.Instance.currentState != GameManager.GameState.Playing)
+        {
+            return;
+        }
+        
         if (isDashing)
         {
             rb.MovePosition(rb.position + movement * dashSpeed * Time.fixedDeltaTime);

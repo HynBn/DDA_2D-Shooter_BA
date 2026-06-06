@@ -25,6 +25,8 @@ public class PlayerHitRadius : MonoBehaviour
 
     void OnTriggerExit2D(Collider2D collision)
     {
+        if (!gameObject.activeInHierarchy) return;
+        
         if (collision.CompareTag("EnemyBullet"))
         {
             bool wasDodged = dodgedBullets.Contains(collision);
