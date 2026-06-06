@@ -5,6 +5,8 @@ using UnityEngine.InputSystem;
 
 public class UIManager : MonoBehaviour
 {
+    public static UIManager Instance { get; private set; }
+
     [Header("UI Panels")]
     public GameObject mainMenuPanel;
     public GameObject optionsPanel;
@@ -16,32 +18,62 @@ public class UIManager : MonoBehaviour
     [Header("HUD Elements")]
     public TextMeshProUGUI roundTimerText;
     public TextMeshProUGUI roundCounterText;
-    
-    // (Später fügen wir hier noch die Image-Lebensleisten hinzu)
+    public TextMeshProUGUI pScoreText;
+    public TextMeshProUGUI eScoreText;
+    public TextMeshProUGUI playerHealthText;
+    public TextMeshProUGUI enemy1HealthText;
+    public TextMeshProUGUI enemy2HealthText;
+    public TextMeshProUGUI enemy3HealthText;
 
+    [Header("Enemy Selection Visuals")]
+    public Image[] enemyCountButtonImages;
+    public Color normalColor = Color.white;
+    public Color selectedColor = Color.red;
+    
     private bool isPaused = false;
+
+    private TextMeshProUGUI[] enemyHealthTexts;
+    private Health playerHealth;
+    private Health[] enemyHealths = new Health[3];
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else if (Instance != this)
+        {
+            Destroy(gameObject);
+        }
+
+        enemyHealthTexts = new TextMeshProUGUI[] { enemy1HealthText, enemy2HealthText, enemy3HealthText };
+    }
 
     void OnEnable()
     {
         GameManager.OnRoundStart += ShowHUDForRound;
-        GameManager.OnRoundEnd += HideHUDForSummary;
     }
 
     void OnDisable()
     {
         GameManager.OnRoundStart -= ShowHUDForRound;
-        GameManager.OnRoundEnd -= HideHUDForSummary;
+
+        if (playerHealth != null) playerHealth.OnHealthChanged -= UpdatePlayerHealthText;
+        for (int i = 0; i < enemyHealths.Length; i++)
+        {
+            if (enemyHealths[i] != null) enemyHealths[i].OnHealthChanged -= UpdateEnemyHealthText(i, 0, 0);
+        }
+
     }
 
     void Start()
     {
-        // Beim Spielstart zeigen wir NUR das Hauptmenü
         ShowPanel(mainMenuPanel);
             }
 
     void Update()
     {
-        // HUD aktualisieren, wenn das Spiel läuft
         if (GameManager.Instance != null && GameManager.Instance.currentState == GameManager.GameState.Playing)
         {
             if (roundTimerText != null)
@@ -49,23 +81,61 @@ public class UIManager : MonoBehaviour
                 roundTimerText.text = GameManager.Instance.currentRoundTime.ToString("F0");
             }
         }
-
-        // NEU: Pause-Logik über das neue Input System (ESC-Taste)
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame && GameManager.Instance.currentState == GameManager.GameState.Playing)
         {
             TogglePause();
         }
     }
 
-    // --- BUTTON METHODEN FÜR DAS MENÜ ---
+    public void UpdateScoreText(int playerScore, int enemyScore)
+    {
+        if (eScoreText != null && pScoreText != null)
+        {
+            pScoreText.text = playerScore.ToString();
+            eScoreText.text = enemyScore.ToString();
+        }
+    }
+
+    public void BindPlayerHealth (Health health)
+    {
+        if (playerHealth != null) playerHealth.OnHealthChanged -= UpdatePlayerHealthText;
+        playerHealth = health;
+        if (playerHealth != null) playerHealth.OnHealthChanged += UpdatePlayerHealthText;
+    }
+
+    public void BindEnemyHealth(Health health, int enemyIndex)
+    {
+        if (enemyIndex < 0 || enemyIndex >= enemyHealths.Length) return;
+
+        enemyHealths[enemyIndex] = health;
+
+        if (health != null)
+        {
+            enemyHealthTexts[enemyIndex].gameObject.SetActive(true);
+            health.OnHealthChanged += UpdateEnemyHealthText(enemyIndex, 0, 0);
+        } else
+        {
+            enemyHealthTexts[enemyIndex].gameObject.SetActive(false);
+        }
+    }
+
+    private void UpdatePlayerHealthText(float current, float max)
+    {
+        if (playerHealthText != null) playerHealthText.text = "Player HP: " + current.ToString("F0") + " / " + max.ToString("F0");
+    }
+
+    private System.Action<float, float> UpdateEnemyHealthText(int index, float current, float max)
+    {
+        return (current, max) =>
+        {
+            if (enemyHealthTexts[index] != null) enemyHealthTexts[index].text = "Enemy " + (index + 1) + " HP: " + current.ToString("F0") + " / " + max.ToString("F0");
+        };
+    }
 
     public void StartGame()
     {
-        // GameManager muss eine Methode haben, um das Spiel (Runde 1) wirklich zu starten.
-        // Aktuell startet er ja direkt in Start(). Das ändern wir gleich!
         ShowPanel(hudPanel);
         if(GameManager.Instance != null) GameManager.Instance.StartMatch();
-
     }
 
     public void OpenSelect()
@@ -85,7 +155,7 @@ public class UIManager : MonoBehaviour
 
     public void QuitGame()
     {
-        Debug.Log("Spiel wird beendet...");
+        Debug.Log("Quitting Game...");
         Application.Quit();
     }
 
@@ -94,17 +164,15 @@ public class UIManager : MonoBehaviour
         isPaused = !isPaused;
         if (isPaused)
         {
-            Time.timeScale = 0f; // Spielzeit einfrieren
+            Time.timeScale = 0f;
             ShowPanel(pausePanel);
         }
         else
         {
-            Time.timeScale = 1f; // Spielzeit weiterlaufen lassen
+            Time.timeScale = 1f;
             ShowPanel(hudPanel);
         }
     }
-
-    // --- INTERNE HILFSMETHODEN ---
 
     private void ShowHUDForRound(int roundNumber)
     {
@@ -112,39 +180,44 @@ public class UIManager : MonoBehaviour
         ShowPanel(hudPanel);
     }
 
-    private void HideHUDForSummary(float time, bool playerWon)
-    {
-        // Optional: Hier könntest du ein kleines "Round Over" Zwischen-Panel einblenden
-    }
-
     private void ShowPanel(GameObject panelToShow)
     {
-        // Alle Panels ausschalten
         if (mainMenuPanel) mainMenuPanel.SetActive(false);
         if (optionsPanel) optionsPanel.SetActive(false);
         if (selectPanel) selectPanel.SetActive(false);
         if (hudPanel) hudPanel.SetActive(false);
         if (pausePanel) pausePanel.SetActive(false);
         if (gameOverPanel) gameOverPanel.SetActive(false);
-
-        // Nur das gewünschte Panel einschalten
         if (panelToShow) panelToShow.SetActive(true);
     }
 
-    // --- METHODEN FÜR DAS SELECT PANEL ---
-
-    // Diese Methode rufst du über Buttons auf (z.B. ein Button für "1", einer für "2", etc.)
     public void SetEnemyCount(int count)
     {
         if (GameSettings.Instance != null)
         {
             GameSettings.Instance.enemyCount = count;
-            Debug.Log("Gegner-Anzahl gesetzt auf: " + count);
+            Debug.Log("Enemies: " + count);
+        }
+
+        if (enemyCountButtonImages != null)
+        {
+            for (int i = 0; i < enemyCountButtonImages.Length; i++)
+            {
+                if (enemyCountButtonImages[i] != null)
+                {
+                    if (i == (count - 1))
+                    {
+                        enemyCountButtonImages[i].color = selectedColor;
+                    }
+                    else
+                    {
+                        enemyCountButtonImages[i].color = normalColor;
+                    }
+                }
+            }
         }
     }
 
-    // Diese Methode verknüpfst du mit dem "OnValueChanged" Event eines Sliders
-    // WICHTIG: Der Slider muss in Unity auf "Whole Numbers" (Ganze Zahlen) gestellt sein, Min = 0, Max = 1
     public void SetDDAModeFromSlider(float value)
     {
         if (GameSettings.Instance != null)
@@ -155,4 +228,6 @@ public class UIManager : MonoBehaviour
             Debug.Log("DDA Modus ist jetzt: " + GameSettings.Instance.currentDDAMode);
         }
     }
+
+    
 }

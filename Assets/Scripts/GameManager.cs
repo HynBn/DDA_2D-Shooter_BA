@@ -59,6 +59,12 @@ public class GameManager : MonoBehaviour
         playerScore = 0;
         enemyScore = 0;
         currentRound = 1;
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateScoreText(playerScore, enemyScore);
+        }
+
         StartCoroutine(PreRoundSetup());
     }
 
@@ -98,6 +104,11 @@ public class GameManager : MonoBehaviour
             currentPlayerInstance.transform.position = playerSpawnPoint.position;
             currentPlayerInstance.GetComponent<Health>()?.ResetHealth();
 
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.BindPlayerHealth(currentPlayerInstance.GetComponent<Health>());
+            }
+
             Rigidbody2D pRb = currentPlayerInstance.GetComponent<Rigidbody2D>();
             if (pRb != null)
             {
@@ -134,6 +145,11 @@ public class GameManager : MonoBehaviour
             enemyScript.gameObject.SetActive(true);
             enemyScript.GetComponent<Health>()?.ResetHealth();
 
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.BindEnemyHealth(enemyScript.GetComponent<Health>(), i);
+            }
+
             Rigidbody2D eRb = enemyScript.GetComponent<Rigidbody2D>();
             if (eRb != null)
             {
@@ -149,6 +165,14 @@ public class GameManager : MonoBehaviour
             if (EnemyDifficultyManager.Instance != null)
             {
                 EnemyDifficultyManager.Instance.ApplyDifficultyToEnemy(enemyScript);
+            }
+        }
+
+        for (int i = existingEnemies.Length; i < enemySpawnPoints.Length; i++)
+        {
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.BindEnemyHealth(null, i);
             }
         }
 
@@ -171,16 +195,20 @@ private IEnumerator PostRoundSummary(bool playerWon)
 
         float finalRoundTime = currentRoundTime;
 
-        // --- PUNKTE VERTEILEN ---
         if (playerWon)
         {
             playerScore++;
-            Debug.Log("Runde geht an den SPIELER!");
+            Debug.Log("Player wins Round");
         }
         else
         {
             enemyScore++;
-            Debug.Log("Runde geht an den GEGNER!");
+            Debug.Log("Enemy wins Round");
+        }
+
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateScoreText(playerScore, enemyScore);
         }
 
         OnRoundEnd?.Invoke(finalRoundTime, playerWon);
