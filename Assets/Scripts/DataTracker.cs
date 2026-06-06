@@ -11,6 +11,13 @@ public class DataTracker : MonoBehaviour
     public int perfectDodges;
     public int totalDashes;
 
+    public float roundShotsFired;
+    public float roundShotsHit;
+    public float roundDamageTaken;
+    public int roundNearHits;
+    public int roundPerfectDodges;
+    public int roundTotalDashes;
+
     public float startTime;
 
     private void Awake()
@@ -39,19 +46,32 @@ public class DataTracker : MonoBehaviour
         totalDashes = 0;
     }
 
+    public void ResetRoundData()
+    {
+        roundShotsFired = 0;
+        roundShotsHit = 0;
+        roundDamageTaken = 0;
+        roundNearHits = 0;
+        roundPerfectDodges = 0;
+        roundTotalDashes = 0;
+    }
+
     public void RegisterPlayerShot()
     {
         playerShotsFired++;
+        roundShotsFired++;
     }
 
     public void RegisterPlayerHit()
     {
         playerShotsHit++;
+        roundShotsHit++;
     }
 
     public void RegisterPlayerDamageTaken(float damage)
     {
         playerDamageTaken += damage;
+        roundDamageTaken += damage;
     }
 
     public float GetPlayerHitRate()
@@ -59,6 +79,13 @@ public class DataTracker : MonoBehaviour
         if (playerShotsFired == 0) return 0f;
 
         return playerShotsHit / playerShotsFired;
+    }
+
+    public float GetRoundPlayerHitRate()
+    {
+        if (roundShotsFired == 0) return 0f;
+
+        return roundShotsHit / roundShotsFired;
     }
 
     public float GetRoundTime()

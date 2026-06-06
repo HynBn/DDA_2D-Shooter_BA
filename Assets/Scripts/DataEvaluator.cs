@@ -24,11 +24,11 @@ public class DataEvaluator : MonoBehaviour
     public float evaluationInterval = 5f; //in sec
     private float timer = 0f;
 
-    public float highHitRate = 0.5f;
-    public float midHitRate = 0.25f;
+    public float highHitRate = 0.4f;
+    public float midHitRate = 0.2f;
     public float lowHitRate = 0.1f;
 
-    public float highDamage = 50f;
+    public float highDamage = 40f;
     public float midDamage = 30f;
     public float lowDamage = 10f;
 
@@ -43,6 +43,12 @@ public class DataEvaluator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(GameManager.Instance != null && GameManager.Instance.currentState != GameManager.GameState.Playing)
+        {
+            timer = 0f;
+            return;
+        }
+
         timer += Time.deltaTime;
 
         if (timer >= evaluationInterval)
@@ -81,18 +87,21 @@ public class DataEvaluator : MonoBehaviour
         }
         else if (hitRate >= midHitRate && damage <= lowDamage)
         {
-            OnModerateHarder?.Invoke();
-            Debug.Log("EASY: MOD INCREASE Difficulty");
+            if (dashEfficiency >= dashEfficiencyLimit)
+            {
+                OnMoreAccurate?.Invoke();
+                Debug.Log("EASY (Agile): More accurate aim");
+            }
+            else
+            {
+                OnModerateHarder?.Invoke();
+                Debug.Log("EASY: MOD INCREASE Difficulty");
+            }
         }
         else if (hitRate >= lowHitRate && damage <= lowDamage)
         {
             OnSlightlyHarder?.Invoke();
             Debug.Log("GOOD: SLI INCREASE Difficulty");
-        }
-        else if (hitRate >= midHitRate && damage <= lowDamage && dashEfficiency >= dashEfficiencyLimit)
-        {
-            OnMoreAccurate?.Invoke();
-            Debug.Log("EASY (Agile): More accurate aim");
         }
         else if (hitRate >= midHitRate && damage <= midDamage && nearHits <= nearHitsLimit)
         {
@@ -101,25 +110,28 @@ public class DataEvaluator : MonoBehaviour
         }
 
         //Easier
-        else if (hitRate == 0 && shotsFired > 0 && damage >= highDamage)
+        else if (hitRate < lowHitRate && shotsFired > 0 && damage >= highDamage)
         {
             OnSignificantEasier?.Invoke();
             Debug.Log("TOO HARD: SIG DECREASE Difficulty");
         }
-        else if (hitRate <= lowHitRate && damage >= highDamage)
+        else if (hitRate < lowHitRate && damage >= highDamage)
         {
-            OnModerateEasier?.Invoke();
-            Debug.Log("HARD: MOD DECREASE Difficulty");
+            if (dashEfficiency < dashEfficiencyLimit)
+            {
+                OnLessAccurate?.Invoke();
+                Debug.Log("HARD (Agile): Less Accurate Aim");
+            }
+            else
+            {
+                OnModerateEasier?.Invoke();
+                Debug.Log("HARD: MOD DECREASE Difficulty");
+            }
         }
         else if (hitRate >= lowHitRate && damage >= midDamage)
         {
             OnSlightlyEasier?.Invoke();
             Debug.Log("DECENT: SLI DECREASE Difficulty");
-        }
-        else if (hitRate >= lowHitRate && damage <= midDamage && dashEfficiency < dashEfficiencyLimit)
-        {
-            OnLessAccurate?.Invoke();
-            Debug.Log("HARD (Agile): Less Accurate Aim");
         }
         else if (hitRate >= midHitRate && damage <= lowDamage && nearHits > nearHitsLimit)
         {
@@ -127,6 +139,20 @@ public class DataEvaluator : MonoBehaviour
             Debug.Log("DECENT (Agile): SLI Less Accurate Aim");
         }
 
+        //Glass Cannon
+        else if (hitRate >= midHitRate && damage > midDamage)
+        {
+            OnSlightLessAccurate?.Invoke();
+            OnMoreStrafe?.Invoke();
+            Debug.Log("GLASS CANNON: SLI Less Accurate Aim + More Strafe");
+        }
+
+        //SAFE PLAY
+        else if (hitRate < lowHitRate && damage <= lowDamage)
+        {
+            OnLessStrafe?.Invoke();
+            Debug.Log("SAFE PLAY: Less Strafe");
+        }
         //Flow-State
         else
         {

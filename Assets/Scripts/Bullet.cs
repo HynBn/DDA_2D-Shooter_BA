@@ -15,8 +15,11 @@ public class Bullet : MonoBehaviour
             {
                 targetHealth.TakeDamage(damage);
             }
+            Destroy(gameObject);
         }
-
-        Destroy(gameObject);
+        else if (collision.gameObject.CompareTag("Wall") || collision.gameObject.CompareTag("EnemyBullet") || collision.gameObject.CompareTag("PlayerBullet"))
+        {
+            Destroy(gameObject);
+        }
     }
 }

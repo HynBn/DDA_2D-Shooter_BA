@@ -13,16 +13,16 @@ public class Enemy : MonoBehaviour
     public float obstacleAvoidRange;
 
     [Header("State Radius")]
-    public float awareRadius = 5f;
-    public float attackRange = 8f;
-    public float retreatRange = 3f;
+    public float awareRadius = 8f;
+    public float attackRange = 7f;
+    public float retreatRange = 4f;
 
     [Header("Fair Parameters")]
-    public float spread = 10f;
-    public float dashSpeed = 15f;
-    public float retreatDashChance = 0.3f;
-    public float strafeSpeed = 0.3f;
-    public float strafeChangeInterval = 1f;
+    public float spread = 15f;
+    public float dashSpeed = 10f;
+    public float retreatDashChance = 0.2f;
+    public float strafeSpeed = 3f;
+    public float strafeChangeInterval = 1.5f;
     public float dodgeChance = 0.8f;
 
     [Header("Unfair Parameters")]
@@ -45,10 +45,24 @@ public class Enemy : MonoBehaviour
     void Start()
     {
         currentState = State.Chase;
+
+        if (player == null)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+            }
+        }
     }
 
     void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.currentState != GameManager.GameState.Playing)
+        {
+            return;
+        }
+
         if (dodgeCooldownTimer > 0)
         {
             dodgeCooldownTimer -= Time.deltaTime;
