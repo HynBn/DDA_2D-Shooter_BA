@@ -159,6 +159,8 @@ public class Enemy : MonoBehaviour
                 currentState = State.Dodge;
                 dodgeTimer = dashDuration;
                 dodgeCooldownTimer = dashCooldown; 
+                        if(AudioManager.Instance != null) AudioManager.Instance.PlaySFX(AudioManager.Instance.dashSFX);
+
                 return; 
             }
         }
@@ -186,6 +188,8 @@ public class Enemy : MonoBehaviour
     {
         if (fireCooldownTimer <= 0)
         {
+            if(AudioManager.Instance != null) AudioManager.Instance.PlaySFX(AudioManager.Instance.shootSFX);
+
             float angle = Random.Range(-spread, spread);
             Quaternion spreadRotation = Quaternion.Euler(0, 0, angle);
             Quaternion finalRotation = firepoint.rotation * spreadRotation;
@@ -223,6 +227,9 @@ public class Enemy : MonoBehaviour
                         currentState = State.Dodge;
                         dodgeTimer = dashDuration;
                         dodgeCooldownTimer = dashCooldown;
+
+                                if(AudioManager.Instance != null) AudioManager.Instance.PlaySFX(AudioManager.Instance.dashSFX);
+
                     } else
                     {
                         transform.position +=(Vector3)(safeDodge * moveSpeed * Time.deltaTime);

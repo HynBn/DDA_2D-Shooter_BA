@@ -93,6 +93,8 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"--- ROUND {currentRound} SETUP");
 
+        if(AudioManager.Instance != null) AudioManager.Instance.PlayGameMusic();
+
         if(UIManager.Instance != null)
         {
             UIManager.Instance.StartCountdown();
@@ -191,6 +193,8 @@ public class GameManager : MonoBehaviour
 private IEnumerator PostRoundSummary(bool playerWon)
     {
         currentState = GameState.GameOver;
+        
+        if(AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
 
         Bullet[] lingeringBullets = FindObjectsByType<Bullet>(FindObjectsInactive.Include);
         foreach (Bullet b in lingeringBullets)
@@ -252,6 +256,8 @@ private IEnumerator PostRoundSummary(bool playerWon)
     {
         StopAllCoroutines();
         currentState = GameState.PreRound;
+
+        if(AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
 
         if (currentPlayerInstance != null)
         {
