@@ -37,6 +37,11 @@ public class UIManager : MonoBehaviour
     [Header("Match Results")]
     public TextMeshProUGUI matchResultText;
     public TextMeshProUGUI finalScoreText;
+
+    [Header("Options Elements")]
+    public Slider musicSlider;
+    public Slider sfxSlider;
+    private float lastSfxTestTime = 0f;
     
     private bool isPaused = false;
 
@@ -78,6 +83,10 @@ public class UIManager : MonoBehaviour
     void Start()
     {
         ShowPanel(mainMenuPanel);
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
+
+        if (musicSlider != null) musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", 0.8f);
+        if (sfxSlider != null) sfxSlider.value = PlayerPrefs.GetFloat("SFXVolume", 0.8f);
     }
 
     void Update()
@@ -201,6 +210,13 @@ public class UIManager : MonoBehaviour
         foreach (string step in steps)
         {
             countdownText.text = step;
+
+            if(AudioManager.Instance != null)
+            {
+                if(step == "FIGHT!") AudioManager.Instance.PlaySFX(AudioManager.Instance.countdownFightSFX);
+                else AudioManager.Instance.PlaySFX(AudioManager.Instance.countdownTickSFX);
+            }
+
             countdownText.transform.localScale = Vector3.one * 1.5f;
 
             float timer = 0f;
@@ -328,6 +344,25 @@ public class UIManager : MonoBehaviour
         if (finalScoreText != null)
         {
             finalScoreText.text = "Final Score: " + pScore + " - " + eScore;
+        }
+    }
+
+    public void OnMusicVolumeChanged(float value)
+    {
+        if(AudioManager.Instance != null) AudioManager.Instance.SetMusicVolume(value);
+    }
+
+    public void OnSFXVolumeChanged(float value)
+    {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetSFXVolume(value);
+
+            if (Time.unscaledTime - lastSfxTestTime > 0.15f)
+            {
+                AudioManager.Instance.PlaySFX(AudioManager.Instance.shootSFX); 
+                lastSfxTestTime = Time.unscaledTime;
+            }
         }
     }
 }

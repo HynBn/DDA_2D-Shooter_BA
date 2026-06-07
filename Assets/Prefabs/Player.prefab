@@ -212,7 +212,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 0.3537736, g: 0.9420151, b: 1, a: 1}
+  m_Color: {r: 0.2783019, g: 0.67245436, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -410,6 +410,7 @@ MonoBehaviour:
       m_Action: Fire
       m_Flags: 0
     m_Flags: 0
+  dashTrail: {fileID: 0}
   isDashing: 0
 --- !u!114 &3389932703215929177
 MonoBehaviour:

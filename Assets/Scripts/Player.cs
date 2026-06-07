@@ -99,6 +99,8 @@ public class Player : MonoBehaviour
             dashTimeCounter = dashDuration;
             dashCooldownCounter = dashCooldown;
 
+            if(AudioManager.Instance != null) AudioManager.Instance.PlaySFX(AudioManager.Instance.dashSFX);
+
             if(DataTracker.Instance != null)
             {
                 DataTracker.Instance.totalDashes++;
@@ -141,6 +143,8 @@ public class Player : MonoBehaviour
 
     void Shoot()
     {
+        if(AudioManager.Instance != null) AudioManager.Instance.PlaySFX(AudioManager.Instance.shootSFX);
+
         float currentSpeed = movement.magnitude;
         float speedFactor = Mathf.Clamp01(currentSpeed);
 
