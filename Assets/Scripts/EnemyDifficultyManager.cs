@@ -124,6 +124,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         }
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Increased", Color.red);
     }
 
     private void MakeModerateHarder()
@@ -147,6 +148,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         }
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Increased", Color.red);
     }
 
     private void MakeSlightlyHarder()
@@ -170,6 +172,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         }
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Decreased", Color.darkGreen);
     }
 
     private void MakeSignificantEasier()
@@ -193,6 +196,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         }
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Decreased", Color.darkGreen);
     }
 
     private void MakeModerateEasier()
@@ -216,6 +220,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         }
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Decreased", Color.darkGreen);
     }
 
     private void MakeSlightlyEasier()
@@ -239,6 +244,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         }
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Decreased", Color.darkGreen);
     }
 
     private void MakeMoreAccurate()
@@ -247,6 +253,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         else roundSpread -= 0.75f;
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Increased", Color.red);
     }
 
     private void MakeSlightlyMoreAccurate()
@@ -255,6 +262,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         else roundSpread -= 0.25f;
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Increased", Color.red);
     }
 
     private void MakeLessAccurate()
@@ -263,6 +271,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         else roundSpread += 0.75f;
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Decreased", Color.darkGreen);
     }
 
     private void MakeSlightlyLessAccurate()
@@ -271,6 +280,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         else roundSpread += 0.25f;
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Decreased", Color.darkGreen);
     }
 
     private void MakeMoreStrafe()
@@ -279,6 +289,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         else roundStrafeSpeed += 0.5f;
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Increased", Color.red);
     }
 
     private void MakeLessStrafe()
@@ -287,6 +298,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         else roundStrafeSpeed -= 0.5f;
         ApplyLimits();
         UpdateActiveEnemies();
+        NotifyUI("Difficulty Decreased", Color.darkGreen);
     }
 
     void ApplyLimits()
@@ -302,7 +314,7 @@ public class EnemyDifficultyManager : MonoBehaviour
 
         // Numerical Limits
         roundMoveSpeed = Mathf.Clamp(roundMoveSpeed, 1f, 10f);
-        roundFireRate = Mathf.Clamp(roundFireRate, 0.2f, 5f); // Darf nie 0 oder negativ werden!
+        roundFireRate = Mathf.Clamp(roundFireRate, 0.2f, 5f);
         roundDashCooldown = Mathf.Clamp(roundDashCooldown, 0.5f, 5f);
         roundBulletForce = Mathf.Clamp(roundBulletForce, 5f, 25f);
     }
@@ -313,6 +325,14 @@ public class EnemyDifficultyManager : MonoBehaviour
         foreach (Enemy enemy in activeEnemies)
         {
             ApplyDifficultyToEnemy(enemy);
+        }
+    }
+
+    private void NotifyUI(string message, Color alertColor)
+    {
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowDDAAlert(message, alertColor);
         }
     }
 }

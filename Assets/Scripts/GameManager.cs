@@ -62,7 +62,7 @@ public class GameManager : MonoBehaviour
 
         if (UIManager.Instance != null)
         {
-            UIManager.Instance.UpdateScoreText(playerScore, enemyScore);
+            UIManager.Instance.UpdateScoreText(playerScore, enemyScore, maxRounds);
         }
 
         StartCoroutine(PreRoundSetup());
@@ -92,6 +92,11 @@ public class GameManager : MonoBehaviour
         currentRoundTime = 0f;
 
         Debug.Log($"--- ROUND {currentRound} SETUP");
+
+        if(UIManager.Instance != null)
+        {
+            UIManager.Instance.StartCountdown();
+        }
 
         if (currentPlayerInstance == null && playerPrefab != null && playerSpawnPoint != null)
         {
@@ -176,16 +181,16 @@ public class GameManager : MonoBehaviour
             }
         }
 
+
         yield return new WaitForSeconds(3f);
 
         currentState = GameState.Playing;
         OnRoundStart?.Invoke(currentRound);
-        Debug.Log("--- FIGHT! ---");
     }
 
 private IEnumerator PostRoundSummary(bool playerWon)
     {
-        currentState = GameState.PostRound;
+        currentState = GameState.GameOver;
 
         Bullet[] lingeringBullets = FindObjectsByType<Bullet>(FindObjectsInactive.Include);
         foreach (Bullet b in lingeringBullets)
@@ -208,7 +213,8 @@ private IEnumerator PostRoundSummary(bool playerWon)
 
         if (UIManager.Instance != null)
         {
-            UIManager.Instance.UpdateScoreText(playerScore, enemyScore);
+            UIManager.Instance.UpdateScoreText(playerScore, enemyScore, maxRounds);
+            UIManager.Instance.ShowMatchResults(playerScore, enemyScore);
         }
 
         OnRoundEnd?.Invoke(finalRoundTime, playerWon);
@@ -240,5 +246,30 @@ private IEnumerator PostRoundSummary(bool playerWon)
     public float GetCurrentRoundTime()
     {
         return currentRoundTime;
+    }
+
+    public void AbortMatch()
+    {
+        StopAllCoroutines();
+        currentState = GameState.PreRound;
+
+        if (currentPlayerInstance != null)
+        {
+            Destroy(currentPlayerInstance);
+            currentPlayerInstance = null;
+        }
+
+        Enemy[] existingEnemies = FindObjectsByType<Enemy>(FindObjectsInactive.Include);
+        foreach (Enemy e in existingEnemies)
+        {
+            if (e != null)
+            {
+                Destroy(e.gameObject);
+            }
+        }
+        playerScore = 0;
+        enemyScore = 0;
+        currentRound = 1;
+        currentRoundTime = 0f;
     }
 }
