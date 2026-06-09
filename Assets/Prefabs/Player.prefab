@@ -306,7 +306,7 @@ MonoBehaviour:
   dashSpeed: 15
   dashDuration: 0.2
   dashCooldown: 2
-  bulletForce: 10
+  bulletForce: 15
   fireRate: 1
   baseSpread: 2
   maxSpread: 20
@@ -410,7 +410,6 @@ MonoBehaviour:
       m_Action: Fire
       m_Flags: 0
     m_Flags: 0
-  dashTrail: {fileID: 0}
   isDashing: 0
 --- !u!114 &3389932703215929177
 MonoBehaviour:
@@ -426,6 +425,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   entityType: 0
   maxHealth: 150
+  currentHealth: 0
 --- !u!58 &2256778384048492884
 CircleCollider2D:
   m_ObjectHideFlags: 0

@@ -192,7 +192,7 @@ public class GameManager : MonoBehaviour
 
 private IEnumerator PostRoundSummary(bool playerWon)
     {
-        currentState = GameState.GameOver;
+        currentState = GameState.PostRound;
         
         if(AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
 
@@ -218,7 +218,6 @@ private IEnumerator PostRoundSummary(bool playerWon)
         if (UIManager.Instance != null)
         {
             UIManager.Instance.UpdateScoreText(playerScore, enemyScore, maxRounds);
-            UIManager.Instance.ShowMatchResults(playerScore, enemyScore);
         }
 
         OnRoundEnd?.Invoke(finalRoundTime, playerWon);
@@ -239,6 +238,8 @@ private IEnumerator PostRoundSummary(bool playerWon)
                 Debug.Log("ENEMY WINS THE MATCH");
             else 
                 Debug.Log("DRAW");
+
+            if(UIManager.Instance != null) UIManager.Instance.ShowMatchResults(playerScore, enemyScore);
         }
         else
         {

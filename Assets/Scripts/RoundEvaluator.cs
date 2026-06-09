@@ -5,6 +5,7 @@ public class RoundEvaluator : MonoBehaviour
 {
     public static event Action OnRoundSignificantHarder;
     public static event Action OnRoundModerateHarder;
+
     public static event Action OnRoundSignificantEasier;
     public static event Action OnRoundModerateEasier;
     public static event Action OnRoundSlightlyEasier;
@@ -13,8 +14,10 @@ public class RoundEvaluator : MonoBehaviour
     public static event Action OnRoundMoreAccurate;
 
     [Header("Time Thresholds")]
-    public float fastRoundLimit = 60f;
-    public float slowRoundLimit = 100f;
+    public float baseFastTime = 60f;
+    public float fastTimePerEnemy = 60f;
+    public float baseSlowTime = 110f;
+    public float slowTimePerEnemy = 110f;
 
     [Header("Damage Thresholds (Round based)")]
     public float highDamage = 70f; 
@@ -42,28 +45,31 @@ public class RoundEvaluator : MonoBehaviour
         float shotsFired = DataTracker.Instance.roundShotsFired;
         int totalDashes = DataTracker.Instance.roundTotalDashes;
 
-        Debug.Log($"--- ROUND SCORE --- TIME: {roundTime:F1}s | DMG: {damage} | WIN: {playerWon}");
+        int enemyCount = GameSettings.Instance != null ? GameSettings.Instance.enemyCount : 1;
+
+        float currentFastLimit = baseFastTime + (fastTimePerEnemy * enemyCount);
+        float currentSlowLimit = baseSlowTime + (slowTimePerEnemy * enemyCount);
 
         //AFK
-        if (!playerWon && roundTime > slowRoundLimit && shotsFired == 0 && totalDashes == 0)
+        if (!playerWon && roundTime > currentSlowLimit && shotsFired == 0 && totalDashes == 0)
         {
-            Debug.Log("ROUND END: AFK detected. No changes.");
             DataTracker.Instance.ResetRoundData();
+            Debug.Log("ROUND END - AFK: No changes.");
             return;
         }
 
         //lost
         if (!playerWon)
         {
-            if (roundTime < fastRoundLimit)
+            if (roundTime < currentFastLimit)
             {
-                Debug.Log("ROUND END: Fast death. Too difficult!");
                 OnRoundSignificantEasier?.Invoke();
+                Debug.Log("ROUND END - FAST LOST: Sig Easier");
             }
             else
             {
-                Debug.Log("ROUND END: Lost normally/slowly. Make it slightly easier.");
                 OnRoundModerateEasier?.Invoke();
+                Debug.Log("ROUND END - AVG LOST: Mod Easier");
             }
         }
 
@@ -71,36 +77,35 @@ public class RoundEvaluator : MonoBehaviour
         else
         {
             // Fast round
-            if (roundTime < fastRoundLimit)
+            if (roundTime < currentFastLimit)
             {
                 if (damage >= highDamage)
                 {
-                    Debug.Log("ROUND END: Fast, but took a lot of damage (Glass Cannon). Flow / slightly harder.");
-                    OnRoundSlightlyEasier?.Invoke(); 
+                    Debug.Log("ROUND END - FAST WON - High Dmg: FLOW");
                 }
                 else
                 {
-                    Debug.Log("ROUND END: Fast and little damage taken. Too easy!");
                     OnRoundSignificantHarder?.Invoke();
+                    Debug.Log("ROUND END - FAST WON - AVG Dmg: Sig harder");
                 }
             }
 
             //AVG round
-            else if (roundTime >= fastRoundLimit && roundTime <= slowRoundLimit)
+            else if (roundTime >= currentFastLimit && roundTime <= currentSlowLimit)
             {
                 if (damage >= highDamage)
                 {
-                    Debug.Log("ROUND END: Average time, high damage. Slightly too hard.");
                     OnRoundSlightlyEasier?.Invoke();
+                    Debug.Log("ROUND END - MID WON - High Dmg: Sli Easier");
                 }
                 else if (damage <= lowDamage)
                 {
-                    Debug.Log("ROUND END: Average time, low damage. Slightly too easy.");
                     OnRoundModerateHarder?.Invoke();
+                    Debug.Log("ROUND END - MID WON - Low Dmg: Mod Harder");
                 }
                 else
                 {
-                    Debug.Log("ROUND END: Perfekter FLOW STATE. Keine Änderung.");
+                    Debug.Log("ROUND END - MID WIN - AVG Dmg: FLOW");
                 }
             }
 
@@ -109,25 +114,25 @@ public class RoundEvaluator : MonoBehaviour
             {
                 if (damage >= highDamage)
                 {
-                    Debug.Log("ROUND END: Langsam und viel Schaden. Zu schwer.");
                     OnRoundModerateEasier?.Invoke();
+                    Debug.Log("ROUND END - LONG WIN - High Dmg: Mod Easier");
                 }
                 else if (damage <= lowDamage)
                 {
-                    Debug.Log("ROUND END: Langsam, kaum Schaden. Beide treffen schlecht. Gegner wird ruhiger/präziser.");
                     OnRoundLessStrafe?.Invoke();
                     OnRoundMoreAccurate?.Invoke();
+                    Debug.Log("ROUND END - LONG WIN - Low Dmg: Less Strafe + More Accuracy");
                 }
                 else
                 {
                     if (hitRate < lowHitRateLimit) 
                     {
-                        Debug.Log("ROUND END: Miese HitRate macht Runde langsam. Strafe verringern.");
                         OnRoundLessStrafe?.Invoke();
+                        Debug.Log("ROUND END - LONG WIN - Low Hit Rate: Less Strafe");
                     }
                     else
                     {
-                        Debug.Log("ROUND END: Langer, ausgeglichener Ausdauer-Kampf (Flow). Keine Änderung.");
+                        Debug.Log("ROUND END - LONG WIN: FLOW");
                     }
                 }
             }
