@@ -29,7 +29,7 @@ public class Enemy : MonoBehaviour
     public float moveSpeed = 3f;
     public float dashDuration = 0.2f;
     public float dashCooldown = 2f;
-    public float bulletForce = 10f;
+    public float bulletForce = 15f;
     public float fireRate = 2f;
 
     private float retreatDashCheckTimer;

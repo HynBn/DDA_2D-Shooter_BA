@@ -281,7 +281,7 @@ MonoBehaviour:
   moveSpeed: 3
   dashDuration: 0.2
   dashCooldown: 2
-  bulletForce: 10
+  bulletForce: 15
   fireRate: 2
 --- !u!114 &4930940650930065601
 MonoBehaviour:
@@ -297,6 +297,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Health
   entityType: 1
   maxHealth: 150
+  currentHealth: 0
 --- !u!114 &846293814377704102
 MonoBehaviour:
   m_ObjectHideFlags: 0

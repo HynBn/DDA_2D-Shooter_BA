@@ -7,7 +7,7 @@ public class Health : MonoBehaviour
     public EntityType entityType;
 
     public float maxHealth = 150f;
-    private float currentHealth;
+    public float currentHealth;
 
     public event Action<float, float> OnHealthChanged;
 
