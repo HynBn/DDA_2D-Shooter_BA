@@ -14,10 +14,10 @@ public class RoundEvaluator : MonoBehaviour
     public static event Action OnRoundMoreAccurate;
 
     [Header("Time Thresholds")]
-    public float baseFastTime = 60f;
-    public float fastTimePerEnemy = 60f;
-    public float baseSlowTime = 110f;
-    public float slowTimePerEnemy = 110f;
+    public float baseFastTime = 100f;
+    public float fastTimePerEnemy = 100f;
+    public float baseSlowTime = 200f;
+    public float slowTimePerEnemy = 200f;
 
     [Header("Damage Thresholds (Round based)")]
     public float highDamage = 70f; 

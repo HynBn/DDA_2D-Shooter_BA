@@ -172,7 +172,7 @@ public class UIManager : MonoBehaviour
         if (GameSettings.Instance != null)
         {
             GameSettings.Instance.enemyCount = count;
-            Debug.Log("Enemies: " + count);
+            //Debug.Log("Enemies: " + count);
         }
 
         if (enemyCountButtonImages != null)
@@ -314,7 +314,7 @@ public class UIManager : MonoBehaviour
             if (value == 0f) GameSettings.Instance.currentDDAMode = GameSettings.DDAMode.Behavioral; // Fair
             else if (value == 1f) GameSettings.Instance.currentDDAMode = GameSettings.DDAMode.Numerical; // Unfair
             
-            Debug.Log("DDA Mode is: " + GameSettings.Instance.currentDDAMode);
+            //Debug.Log("DDA Mode is: " + GameSettings.Instance.currentDDAMode);
         }
     }
     

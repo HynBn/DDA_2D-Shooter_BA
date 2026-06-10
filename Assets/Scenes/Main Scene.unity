@@ -5797,10 +5797,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aded3c1a020654e4cbc70c0759300932, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoundEvaluator
-  baseFastTime: 60
-  fastTimePerEnemy: 60
-  baseSlowTime: 110
-  slowTimePerEnemy: 110
+  baseFastTime: 100
+  fastTimePerEnemy: 100
+  baseSlowTime: 200
+  slowTimePerEnemy: 200
   highDamage: 70
   lowDamage: 20
   lowHitRateLimit: 0.2

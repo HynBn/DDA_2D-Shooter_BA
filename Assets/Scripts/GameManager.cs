@@ -190,7 +190,7 @@ public class GameManager : MonoBehaviour
         OnRoundStart?.Invoke(currentRound);
     }
 
-private IEnumerator PostRoundSummary(bool playerWon)
+    private IEnumerator PostRoundSummary(bool playerWon)
     {
         currentState = GameState.PostRound;
         
@@ -207,12 +207,12 @@ private IEnumerator PostRoundSummary(bool playerWon)
         if (playerWon)
         {
             playerScore++;
-            Debug.Log("Player wins Round");
+            //Debug.Log("Player wins Round");
         }
         else
         {
             enemyScore++;
-            Debug.Log("Enemy wins Round");
+            //Debug.Log("Enemy wins Round");
         }
 
         if (UIManager.Instance != null)
@@ -230,14 +230,14 @@ private IEnumerator PostRoundSummary(bool playerWon)
         if (matchDecidedEarly || currentRound >= maxRounds)
         {
             currentState = GameState.GameOver;
-            Debug.Log($"--- MATCH OVER --- Player: {playerScore} | Enemy: {enemyScore}");
+            //Debug.Log($"--- MATCH OVER --- Player: {playerScore} | Enemy: {enemyScore}");
             
-            if (playerScore > enemyScore) 
-                Debug.Log("PLAYER WINS THE MATCH");
-            else if (enemyScore > playerScore) 
-                Debug.Log("ENEMY WINS THE MATCH");
-            else 
-                Debug.Log("DRAW");
+            // if (playerScore > enemyScore) 
+            //     Debug.Log("PLAYER WINS THE MATCH");
+            // else if (enemyScore > playerScore) 
+            //     Debug.Log("ENEMY WINS THE MATCH");
+            // else 
+            //     Debug.Log("DRAW");
 
             if(UIManager.Instance != null) UIManager.Instance.ShowMatchResults(playerScore, enemyScore);
         }

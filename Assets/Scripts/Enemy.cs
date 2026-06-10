@@ -230,10 +230,7 @@ public class Enemy : MonoBehaviour
 
                                 if(AudioManager.Instance != null) AudioManager.Instance.PlaySFX(AudioManager.Instance.dashSFX);
 
-                    } else
-                    {
-                        transform.position +=(Vector3)(safeDodge * moveSpeed * Time.deltaTime);
-                    }
+                    } 
                     break;
                 }
             }

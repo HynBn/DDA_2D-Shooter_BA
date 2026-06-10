@@ -604,7 +604,7 @@ public class EnemyDifficultyManager : MonoBehaviour
 
         //Unfair Limits
         roundMoveSpeed = Mathf.Clamp(roundMoveSpeed, 1f, 6f);
-        roundFireRate = Mathf.Clamp(roundFireRate, 0.2f, 4f);
+        roundFireRate = Mathf.Clamp(roundFireRate, 0.2f, 3.5f);
         roundDashCooldown = Mathf.Clamp(roundDashCooldown, 1f, 4f);
         roundBulletForce = Mathf.Clamp(roundBulletForce, 5f, 20f);
     }
