@@ -74,6 +74,9 @@ public class Player : MonoBehaviour
 
         Vector2 screenPos = mouseAction.ReadValue<Vector2>();
         mousePos = cam.ScreenToWorldPoint(screenPos);
+        Vector2 lookDir = mousePos - rb.position;
+        float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90f;
+        rb.rotation = angle;
 
         if (dashCooldownCounter > 0)
         {
@@ -104,6 +107,7 @@ public class Player : MonoBehaviour
             if(DataTracker.Instance != null)
             {
                 DataTracker.Instance.totalDashes++;
+                DataTracker.Instance.roundTotalDashes++;
             }
         }
 
@@ -136,9 +140,9 @@ public class Player : MonoBehaviour
             rb.MovePosition(rb.position + movement * moveSpeed * Time.fixedDeltaTime);
         }
 
-        Vector2 lookDir = mousePos - rb.position;
-        float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90f;
-        rb.rotation = angle;
+        // Vector2 lookDir = mousePos - rb.position;
+        // float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90f;
+        // rb.rotation = angle;
     }
 
     void Shoot()

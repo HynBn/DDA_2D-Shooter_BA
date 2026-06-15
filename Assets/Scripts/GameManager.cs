@@ -59,6 +59,11 @@ public class GameManager : MonoBehaviour
         playerScore = 0;
         enemyScore = 0;
         currentRound = 1;
+        
+        if (EnemyDifficultyManager.Instance != null)
+        {
+            EnemyDifficultyManager.Instance.ResetMatchDDACounters();
+        }
 
         if (UIManager.Instance != null)
         {

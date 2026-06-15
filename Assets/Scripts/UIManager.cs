@@ -9,6 +9,7 @@ public class UIManager : MonoBehaviour
     public static UIManager Instance { get; private set; }
 
     [Header("UI Panels")]
+    public GameObject consentPanel;
     public GameObject mainMenuPanel;
     public GameObject optionsPanel;
     public GameObject selectPanel;
@@ -49,6 +50,8 @@ public class UIManager : MonoBehaviour
     private Health playerHealth;
     private Health[] enemyHealths = new Health[3];
 
+    public static bool isTelemetryAllowed = false;
+
     void Awake()
     {
         if (Instance == null)
@@ -82,7 +85,19 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
-        ShowPanel(mainMenuPanel);
+        int consentStatus = PlayerPrefs.GetInt("TelemetryConsent", 0);
+
+        if (consentStatus == 0)
+        {
+            ShowPanel(consentPanel);
+        }
+        else
+        {
+            isTelemetryAllowed = (consentStatus == 1);
+            ShowPanel(mainMenuPanel);
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
+        }
+
         if (AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
 
         if (musicSlider != null) musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", 0.8f);
@@ -108,6 +123,11 @@ public class UIManager : MonoBehaviour
     {
         ShowPanel(hudPanel);
         if(GameManager.Instance != null) GameManager.Instance.StartMatch();
+    }
+
+    public void OpenConsentPanel()
+    {
+        ShowPanel(consentPanel);
     }
 
     public void OpenSelect()
@@ -158,6 +178,7 @@ public class UIManager : MonoBehaviour
 
     private void ShowPanel(GameObject panelToShow)
     {
+        if (consentPanel) consentPanel.SetActive(false);
         if (mainMenuPanel) mainMenuPanel.SetActive(false);
         if (optionsPanel) optionsPanel.SetActive(false);
         if (selectPanel) selectPanel.SetActive(false);
@@ -364,5 +385,27 @@ public class UIManager : MonoBehaviour
                 lastSfxTestTime = Time.unscaledTime;
             }
         }
+    }
+
+    public void AcceptTelemetry()
+    {
+        isTelemetryAllowed = true;
+        PlayerPrefs.SetInt("TelemetryConsent", 1); 
+        PlayerPrefs.Save();
+        ProceedToMainMenu();
+    }
+
+    public void DeclineTelemetry()
+    {
+        isTelemetryAllowed = false;
+        PlayerPrefs.SetInt("TelemetryConsent", 2); 
+        PlayerPrefs.Save();
+        ProceedToMainMenu();
+    }
+
+    private void ProceedToMainMenu()
+    {
+        ShowPanel(mainMenuPanel);
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
     }
 }

@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class EnemyDifficultyManager : MonoBehaviour
@@ -21,6 +23,35 @@ public class EnemyDifficultyManager : MonoBehaviour
     public float roundBulletForce = 15f;
     public float roundFireRate = 2f;
 
+    [Header("Modifiers")]
+    [SerializeField] private float modAttackRange = 1.0f;
+    [SerializeField] private float modRetreatRange = 1.0f;
+    [SerializeField] private float modSpread = 1.2f;       
+    [SerializeField] private float modDodgeChance = 0.1f;
+    [SerializeField] private float modDashSpeed = 1.0f;
+    [SerializeField] private float modAwareRadius = 0.5f;  
+    [SerializeField] private float modStrafeSpeed = 0.5f;
+    [SerializeField] private float modStrafeInterval = 0.1f;
+    
+    [Space(5)]
+    [SerializeField] private float modMoveSpeed = 0.6f;
+    [SerializeField] private float modFireRate = 0.3f;     
+    [SerializeField] private float modDashCooldown = 0.5f; 
+    [SerializeField] private float modBulletForce = 1.5f;
+
+    [Header("Specific Modifiers (Accuracy & Strafe)")]
+    [SerializeField] private float modAccSpread = 0.75f;
+    [SerializeField] private float modAccFireRate = 0.05f;
+    [SerializeField] private float modSpecStrafeSpeed = 0.25f;
+    [SerializeField] private float modSpecStrafeInterval = 0.05f;
+    [SerializeField] private float modSpecMoveSpeed = 0.25f;
+
+    [Header("DDA Telemetry")]
+    public int totalHarderInterventions = 0;
+    public int totalEasierInterventions = 0;
+    public int totalAccuracyInterventions = 0;
+    public int totalStrafeInterventions = 0;
+
     void Awake()
     {
         if (Instance == null) Instance = this;
@@ -39,7 +70,6 @@ public class EnemyDifficultyManager : MonoBehaviour
 
         DataEvaluator.OnMoreAccurate += MakeMoreAccurate;
         DataEvaluator.OnSlightMoreAccurate += MakeSlightlyMoreAccurate;
-
         DataEvaluator.OnLessAccurate += MakeLessAccurate;
         DataEvaluator.OnSlightLessAccurate += MakeSlightlyLessAccurate;
 
@@ -52,7 +82,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         RoundEvaluator.OnRoundModerateHarder += MakeRoundModerateHarder;
         RoundEvaluator.OnRoundSignificantEasier += MakeRoundSignificantEasier;
         RoundEvaluator.OnRoundModerateEasier += MakeRoundModerateEasier;
-        RoundEvaluator.OnRoundSlightlyEasier += MakeModerateEasier;
+        RoundEvaluator.OnRoundSlightlyEasier += MakeSlightlyEasier;
         RoundEvaluator.OnRoundLessStrafe += MakeLessStrafe;
         RoundEvaluator.OnRoundMoreAccurate += MakeMoreAccurate;
     }
@@ -69,7 +99,6 @@ public class EnemyDifficultyManager : MonoBehaviour
 
         DataEvaluator.OnMoreAccurate -= MakeMoreAccurate;
         DataEvaluator.OnSlightMoreAccurate -= MakeSlightlyMoreAccurate;
-
         DataEvaluator.OnLessAccurate -= MakeLessAccurate;
         DataEvaluator.OnSlightLessAccurate -= MakeSlightlyLessAccurate;
 
@@ -82,9 +111,70 @@ public class EnemyDifficultyManager : MonoBehaviour
         RoundEvaluator.OnRoundModerateHarder -= MakeRoundModerateHarder;
         RoundEvaluator.OnRoundSignificantEasier -= MakeRoundSignificantEasier;
         RoundEvaluator.OnRoundModerateEasier -= MakeRoundModerateEasier;
-        RoundEvaluator.OnRoundSlightlyEasier -= MakeModerateEasier;
+        RoundEvaluator.OnRoundSlightlyEasier -= MakeRoundSlightlyEasier;
         RoundEvaluator.OnRoundLessStrafe -= MakeLessStrafe;
         RoundEvaluator.OnRoundMoreAccurate -= MakeMoreAccurate;
+    }
+
+    private bool IsNumericalMode()
+    {
+        return GameSettings.Instance != null && GameSettings.Instance.currentDDAMode == GameSettings.DDAMode.Numerical;
+    }
+
+    private void AdjustGeneralDifficulty (float multiplier, string notifyMsg, Color color)
+    {
+        if(multiplier > 0) totalHarderInterventions++;
+        else totalEasierInterventions++;
+
+        roundAwareRadius -= modAwareRadius * multiplier;
+        roundAttackRange += modAttackRange * multiplier;
+        roundRetreatRange += modRetreatRange * multiplier;
+        roundSpread -= modSpread * multiplier;
+        roundDashSpeed += modDashSpeed * multiplier;
+        roundStrafeSpeed += modStrafeSpeed * multiplier;
+        roundStrafeChangeInterval += modStrafeInterval * multiplier;
+        roundDodgeChance += modDodgeChance * multiplier;
+
+        if (IsNumericalMode())
+        {
+            roundMoveSpeed += modMoveSpeed * multiplier;
+            roundDashCooldown -= modDashCooldown * multiplier;
+            roundBulletForce += modBulletForce * multiplier;
+            roundFireRate -= modFireRate * multiplier;
+        }
+
+        ApplyLimits();
+        UpdateActiveEnemies();
+        NotifyUI(notifyMsg, color);
+    }
+
+    private void AdjustAccuracy (float multiplier, string notifyMsg, Color color)
+    {
+        totalAccuracyInterventions++;
+        if (multiplier > 0) totalHarderInterventions++;
+        else if (multiplier < 0) totalEasierInterventions++;
+
+        roundSpread -= modAccSpread * multiplier;
+        if(IsNumericalMode()) roundFireRate -= modAccFireRate * multiplier;
+
+        ApplyLimits();
+        UpdateActiveEnemies();
+        NotifyUI(notifyMsg, color);
+    }
+
+    private void AdjustStrafe (float multiplier, string notifyMsg, Color color)
+    {
+        totalStrafeInterventions++;
+        if (multiplier > 0) totalHarderInterventions++;
+        else if (multiplier < 0) totalEasierInterventions++;
+
+        roundStrafeSpeed += modSpecStrafeSpeed * multiplier;
+        roundStrafeChangeInterval += modSpecStrafeInterval * multiplier;
+        if(IsNumericalMode()) roundMoveSpeed += modSpecMoveSpeed * multiplier;
+
+        ApplyLimits();
+        UpdateActiveEnemies();
+        NotifyUI(notifyMsg, color);
     }
 
     public void ApplyDifficultyToEnemy(Enemy myEnemyScript)
@@ -109,490 +199,394 @@ public class EnemyDifficultyManager : MonoBehaviour
         myEnemyScript.fireRate = roundFireRate;
     }
 
+    //DataEvaluator (Interval)
+    private void MakeSignificantHarder() => AdjustGeneralDifficulty(1.0f, "Difficulty Increased", Color.red);
+    private void MakeModerateHarder() => AdjustGeneralDifficulty(0.6f, "Difficulty Increased", Color.red);
+    private void MakeSlightlyHarder() => AdjustGeneralDifficulty(0.25f, "Difficulty Increased", Color.red);
 
-    private bool IsNumericalMode()
-    {
-        return GameSettings.Instance != null && GameSettings.Instance.currentDDAMode == GameSettings.DDAMode.Numerical;
-    }
+    private void MakeSignificantEasier() => AdjustGeneralDifficulty(-1.0f, "Difficulty Decreased", Color.darkGreen);
+    private void MakeModerateEasier() => AdjustGeneralDifficulty(-0.6f, "Difficulty Decreased", Color.darkGreen);
+    private void MakeSlightlyEasier() => AdjustGeneralDifficulty(-0.25f, "Difficulty Decreased", Color.darkGreen);
 
-    private void MakeSignificantHarder()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange += 1f;
-            roundRetreatRange += 1f;
-            roundSpread -= 1.2f;           
-            roundDodgeChance += 0.1f;
-            roundDashSpeed += 1f;
-            roundAwareRadius -= 0.5f;
-            roundStrafeSpeed += 0.5f;
-            roundStrafeChangeInterval += 0.1f;
+    //Accuracy
+    private void MakeMoreAccurate() => AdjustAccuracy(1.0f, "Difficulty Increased", Color.red);
+    private void MakeSlightlyMoreAccurate() => AdjustAccuracy(0.33f, "Difficulty Increased", Color.red);
+    private void MakeLessAccurate() => AdjustAccuracy(-1.0f, "Difficulty Decreased", Color.darkGreen);
+    private void MakeSlightlyLessAccurate() => AdjustAccuracy(-0.33f, "Difficulty Decreased", Color.darkGreen);
 
-            roundMoveSpeed += 0.6f;
-            roundFireRate -= 0.3f;       
-            roundDashCooldown -= 0.5f;   
-            roundBulletForce += 1.5f;
-        }
-        else
-        {
-            roundAttackRange += 1f;
-            roundRetreatRange += 1f;
-            roundSpread -= 1.2f;           
-            roundDodgeChance += 0.1f;
-            roundDashSpeed += 1f;
-            roundAwareRadius -= 0.5f;
-            roundStrafeSpeed += 0.5f;
-            roundStrafeChangeInterval += 0.1f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Increased", Color.red);
-    }
+    //Strafe
+    private void MakeMoreStrafe() => AdjustStrafe(1.0f, "Difficulty Increased", Color.red);
+    private void MakeSlightlyMoreStrafe() => AdjustStrafe(0.6f, "Difficulty Increased", Color.red);
+    private void MakeLessStrafe() => AdjustStrafe(-1.0f, "Difficulty Decreased", Color.darkGreen);
+    private void MakeSlightlyLessStrafe() => AdjustStrafe(-0.6f, "Difficulty Decreased", Color.darkGreen);
 
-    private void MakeModerateHarder()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange += 0.6f;
-            roundRetreatRange += 0.6f;
-            roundSpread -= 0.7f;
-            roundDodgeChance += 0.05f;
-            roundDashSpeed += 0.6f;
-            roundAwareRadius -= 0.3f;
-            roundStrafeSpeed += 0.3f;
-            roundStrafeChangeInterval += 0.05f;
+    //RoundEvaluator
+    private void MakeRoundSignificantHarder() => AdjustGeneralDifficulty(1.5f, "Difficulty Increased", Color.red);
+    private void MakeRoundModerateHarder() => AdjustGeneralDifficulty(1.2f, "Difficulty Increased", Color.red);
+    private void MakeRoundSignificantEasier() => AdjustGeneralDifficulty(-1.5f, "Difficulty Decreased", Color.darkGreen);
+    private void MakeRoundModerateEasier() => AdjustGeneralDifficulty(-1.2f, "Difficulty Decreased", Color.darkGreen);
+    private void MakeRoundSlightlyEasier() => AdjustGeneralDifficulty(-0.5f, "Difficulty Decreased", Color.darkGreen);
 
-            roundMoveSpeed += 0.4f;
-            roundFireRate -= 0.2f;
-            roundDashCooldown -= 0.3f;
-            roundBulletForce += 1f;
-        }
-        else
-        {
-            roundAttackRange += 0.6f;
-            roundRetreatRange += 0.6f;
-            roundSpread -= 0.7f;
-            roundDodgeChance += 0.05f;
-            roundDashSpeed += 0.6f;
-            roundAwareRadius -= 0.3f;
-            roundStrafeSpeed += 0.3f;
-            roundStrafeChangeInterval += 0.05f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Increased", Color.red);
-    }
+    // private void MakeSignificantHarder()
+    // {
+    //         roundAttackRange += 1f;
+    //         roundRetreatRange += 1f;
+    //         roundSpread -= 1.2f;           
+    //         roundDodgeChance += 0.1f;
+    //         roundDashSpeed += 1f;
+    //         roundAwareRadius -= 0.5f;
+    //         roundStrafeSpeed += 0.5f;
+    //         roundStrafeChangeInterval += 0.1f;
+            
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed += 0.6f;
+    //         roundFireRate -= 0.3f;       
+    //         roundDashCooldown -= 0.5f;   
+    //         roundBulletForce += 1.5f;
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
 
-    private void MakeSlightlyHarder()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange += 0.25f;
-            roundRetreatRange += 0.25f;
-            roundSpread -= 0.4f;
-            roundDodgeChance += 0.02f;
-            roundDashSpeed += 0.25f;
-            roundAwareRadius -= 0.1f;
-            roundStrafeSpeed += 0.1f;
-            roundStrafeChangeInterval += 0.025f;
+    // private void MakeModerateHarder()
+    // {
+    //         roundAttackRange += 0.6f;
+    //         roundRetreatRange += 0.6f;
+    //         roundSpread -= 0.7f;
+    //         roundDodgeChance += 0.05f;
+    //         roundDashSpeed += 0.6f;
+    //         roundAwareRadius -= 0.3f;
+    //         roundStrafeSpeed += 0.3f;
+    //         roundStrafeChangeInterval += 0.05f;
+        
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed += 0.4f;
+    //         roundFireRate -= 0.2f;
+    //         roundDashCooldown -= 0.3f;
+    //         roundBulletForce += 1f;
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
 
-            roundMoveSpeed += 0.2f;
-            roundFireRate -= 0.1f;
-            roundDashCooldown -= 0.1f;
-            roundBulletForce += 0.5f;
-        }
-        else
-        {
-            roundAttackRange += 0.25f;
-            roundRetreatRange += 0.25f;
-            roundSpread -= 0.4f;
-            roundDodgeChance += 0.02f;
-            roundDashSpeed += 0.25f;
-            roundAwareRadius -= 0.1f;
-            roundStrafeSpeed += 0.1f;
-            roundStrafeChangeInterval += 0.025f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    // private void MakeSlightlyHarder()
+    // {
+    //         roundAttackRange += 0.25f;
+    //         roundRetreatRange += 0.25f;
+    //         roundSpread -= 0.4f;
+    //         roundDodgeChance += 0.02f;
+    //         roundDashSpeed += 0.25f;
+    //         roundAwareRadius -= 0.1f;
+    //         roundStrafeSpeed += 0.1f;
+    //         roundStrafeChangeInterval += 0.025f;
 
-    private void MakeSignificantEasier()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange -= 1f;
-            roundRetreatRange -= 1f;
-            roundSpread += 1.2f;
-            roundDodgeChance -= 0.1f;
-            roundDashSpeed -= 1f;
-            roundAwareRadius += 0.5f;
-            roundStrafeSpeed -= 0.5f;
-            roundStrafeChangeInterval -= 0.1f;
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed += 0.2f;
+    //         roundFireRate -= 0.1f;
+    //         roundDashCooldown -= 0.1f;
+    //         roundBulletForce += 0.5f;
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
 
-            roundMoveSpeed -= 0.6f;
-            roundFireRate += 0.3f;       
-            roundDashCooldown += 0.5f;
-            roundBulletForce -= 1.5f;
-        }
-        else
-        {
-            roundAttackRange -= 1f;
-            roundRetreatRange -= 1f;
-            roundSpread += 1.2f;
-            roundDodgeChance -= 0.1f;
-            roundDashSpeed -= 1f;
-            roundAwareRadius += 0.5f;
-            roundStrafeSpeed -= 0.5f;
-            roundStrafeChangeInterval -= 0.1f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    // private void MakeSignificantEasier()
+    // {
+    //     if (IsNumericalMode())
+    //     {
+    //         roundAttackRange -= 1f;
+    //         roundRetreatRange -= 1f;
+    //         roundSpread += 1.2f;
+    //         roundDodgeChance -= 0.1f;
+    //         roundDashSpeed -= 1f;
+    //         roundAwareRadius += 0.5f;
+    //         roundStrafeSpeed -= 0.5f;
+    //         roundStrafeChangeInterval -= 0.1f;
 
-    private void MakeModerateEasier()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange -= 0.6f;
-            roundRetreatRange -= 0.6f;
-            roundSpread += 0.7f;
-            roundDodgeChance -= 0.05f;
-            roundDashSpeed -= 0.6f;
-            roundAwareRadius += 0.3f;
-            roundStrafeSpeed -= 0.3f;
-            roundStrafeChangeInterval -= 0.05f;
+    //         roundMoveSpeed -= 0.6f;
+    //         roundFireRate += 0.3f;       
+    //         roundDashCooldown += 0.5f;
+    //         roundBulletForce -= 1.5f;
+    //     }
+    //     else
+    //     {
+    //         roundAttackRange -= 1f;
+    //         roundRetreatRange -= 1f;
+    //         roundSpread += 1.2f;
+    //         roundDodgeChance -= 0.1f;
+    //         roundDashSpeed -= 1f;
+    //         roundAwareRadius += 0.5f;
+    //         roundStrafeSpeed -= 0.5f;
+    //         roundStrafeChangeInterval -= 0.1f;
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Decreased", Color.darkGreen);
+    // }
 
-            roundMoveSpeed -= 0.4f;
-            roundFireRate += 0.3f;
-            roundDashCooldown += 0.3f;
-            roundBulletForce -= 1f;
-        }
-        else
-        {
-            roundAttackRange -= 0.6f;
-            roundRetreatRange -= 0.6f;
-            roundSpread += 0.7f;
-            roundDodgeChance -= 0.05f;
-            roundDashSpeed -= 0.6f;
-            roundAwareRadius += 0.3f;
-            roundStrafeSpeed -= 0.3f;
-            roundStrafeChangeInterval -= 0.05f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    // private void MakeModerateEasier()
+    // {
+    //         roundAttackRange -= 0.6f;
+    //         roundRetreatRange -= 0.6f;
+    //         roundSpread += 0.7f;
+    //         roundDodgeChance -= 0.05f;
+    //         roundDashSpeed -= 0.6f;
+    //         roundAwareRadius += 0.3f;
+    //         roundStrafeSpeed -= 0.3f;
+    //         roundStrafeChangeInterval -= 0.05f;
 
-    private void MakeSlightlyEasier()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange -= 0.25f;
-            roundRetreatRange -= 0.25f;
-            roundSpread += 0.4f;
-            roundDodgeChance -= 0.02f;
-            roundDashSpeed -= 0.25f;
-            roundAwareRadius += 0.1f;
-            roundStrafeSpeed -= 0.1f;
-            roundStrafeChangeInterval -= 0.025f;
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed -= 0.4f;
+    //         roundFireRate += 0.3f;
+    //         roundDashCooldown += 0.3f;
+    //         roundBulletForce -= 1f;
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Decreased", Color.darkGreen);
+    // }
 
-            roundMoveSpeed -= 0.2f;
-            roundFireRate += 0.1f;
-            roundDashCooldown += 0.1f;
-            roundBulletForce -= 0.5f;
-        }
-        else
-        {
-            roundAttackRange -= 0.25f;
-            roundRetreatRange -= 0.25f;
-            roundSpread += 0.4f;
-            roundDodgeChance -= 0.02f;
-            roundDashSpeed -= 0.25f;
-            roundAwareRadius += 0.1f;
-            roundStrafeSpeed -= 0.1f;
-            roundStrafeChangeInterval -= 0.025f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    // private void MakeSlightlyEasier()
+    // {
+    //         roundAttackRange -= 0.25f;
+    //         roundRetreatRange -= 0.25f;
+    //         roundSpread += 0.4f;
+    //         roundDodgeChance -= 0.02f;
+    //         roundDashSpeed -= 0.25f;
+    //         roundAwareRadius += 0.1f;
+    //         roundStrafeSpeed -= 0.1f;
+    //         roundStrafeChangeInterval -= 0.025f;
 
-    private void MakeMoreAccurate()
-    {
-        if (IsNumericalMode()) 
-        {
-            roundFireRate -= 0.05f;
-            roundSpread -= 0.75f;
-        }
-        else 
-        {
-            roundSpread -= 0.75f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Increased", Color.red);
-    }
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed -= 0.2f;
+    //         roundFireRate += 0.1f;
+    //         roundDashCooldown += 0.1f;
+    //         roundBulletForce -= 0.5f;
+    //     }
 
-    private void MakeSlightlyMoreAccurate()
-    {
-        if (IsNumericalMode())
-        {
-            roundFireRate -= 0.025f;
-            roundSpread -= 0.25f;
-        }
-        else
-        {
-            roundSpread -= 0.25f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Increased", Color.red);
-    }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Decreased", Color.darkGreen);
+    // }
 
-    private void MakeLessAccurate()
-    {
-        if (IsNumericalMode())
-        {
-            roundFireRate += 0.05f; 
-            roundSpread += 0.75f;
-        }
-        else
-        {
-            roundSpread += 0.75f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    // private void MakeMoreAccurate()
+    // {
+    //         roundSpread -= 0.75f;
 
-    private void MakeSlightlyLessAccurate()
-    {
-        if (IsNumericalMode())
-        {
-            roundFireRate += 0.025f;
-            roundSpread += 0.25f;
-        }
-        else
-        {
-            roundSpread += 0.25f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    //     if (IsNumericalMode()) 
+    //     {
+    //         roundFireRate -= 0.05f;
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
 
-    private void MakeMoreStrafe()
-    {
-        if (IsNumericalMode())
-        {
-            roundMoveSpeed += 0.25f; 
-            roundStrafeSpeed += 0.25f;
-            roundStrafeChangeInterval += 0.05f;
-        }
-        else
-        {
-            roundStrafeSpeed += 0.25f;
-            roundStrafeChangeInterval += 0.05f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Increased", Color.red);
-    }
+    // private void MakeSlightlyMoreAccurate()
+    // {
+    //         roundSpread -= 0.25f;
 
-    private void MakeSlightlyMoreStrafe()
-    {
-        if (IsNumericalMode())
-        {
-            roundMoveSpeed += 0.15f; 
-            roundStrafeSpeed += 0.15f;
-            roundStrafeChangeInterval += 0.025f;
-        }
-        else
-        {
-            roundStrafeSpeed += 0.15f;
-            roundStrafeChangeInterval += 0.025f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Increased", Color.red);
-    }
+    //     if (IsNumericalMode())
+    //     {
+    //         roundFireRate -= 0.025f;
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
 
-    private void MakeLessStrafe()
-    {
-        if (IsNumericalMode())
-        {
-            roundMoveSpeed -= 0.25f;
-            roundStrafeSpeed -= 0.25f;
-            roundStrafeChangeInterval -= 0.05f;
-        }
-        else
-        {
-            roundStrafeSpeed -= 0.25f;
-            roundStrafeChangeInterval -= 0.05f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    // private void MakeLessAccurate()
+    // {
+    //         roundSpread += 0.75f;
 
-    private void MakeSlightlyLessStrafe()
-    {
-        if (IsNumericalMode())
-        {
-            roundMoveSpeed -= 0.15f;
-            roundStrafeSpeed -= 0.15f;
-            roundStrafeChangeInterval -= 0.025f;
-        }
-        else
-        {
-            roundStrafeSpeed -= 0.15f;
-            roundStrafeChangeInterval -= 0.025f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    //     if (IsNumericalMode())
+    //     {
+    //         roundFireRate += 0.05f; 
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Decreased", Color.darkGreen);
+    // }
 
-    private void MakeRoundSignificantHarder()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange += 1.5f;
-            roundRetreatRange += 1.5f;
-            roundSpread -= 1.7f;           
-            roundDodgeChance += 0.15f;
-            roundDashSpeed += 1.5f;
-            roundAwareRadius -= 1f;
-            roundStrafeSpeed += 1f;
-            roundStrafeChangeInterval += 0.15f;
+    // private void MakeSlightlyLessAccurate()
+    // {
+    //         roundSpread += 0.25f;
 
-            roundMoveSpeed += 1f;
-            roundFireRate -= 0.5f;       
-            roundDashCooldown -= 0.6f;   
-            roundBulletForce += 2f;
-        }
-        else
-        {
-            roundAttackRange += 1.5f;
-            roundRetreatRange += 1.5f;
-            roundSpread -= 1.7f;           
-            roundDodgeChance += 0.15f;
-            roundDashSpeed += 1.5f;
-            roundAwareRadius -= 1f;
-            roundStrafeSpeed += 1f;
-            roundStrafeChangeInterval += 0.15f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Increased", Color.red);
-    }
+    //     if (IsNumericalMode())
+    //     {
+    //         roundFireRate += 0.025f;
+    //     }
 
-    private void MakeRoundModerateHarder()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange += 1.2f;
-            roundRetreatRange += 1.2f;
-            roundSpread -= 1.2f;
-            roundDodgeChance += 0.12f;
-            roundDashSpeed += 1.2f;
-            roundAwareRadius -= 0.6f;
-            roundStrafeSpeed += 0.6f;
-            roundStrafeChangeInterval += 0.05f;
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Decreased", Color.darkGreen);
+    // }
 
-            roundMoveSpeed += 0.8f;
-            roundFireRate -= 0.4f;
-            roundDashCooldown -= 0.55f;
-            roundBulletForce += 1.6f;
-        }
-        else
-        {
-            roundAttackRange += 1.2f;
-            roundRetreatRange += 1.2f;
-            roundSpread -= 1.2f;
-            roundDodgeChance += 0.12f;
-            roundDashSpeed += 1.2f;
-            roundAwareRadius -= 0.6f;
-            roundStrafeSpeed += 0.6f;
-            roundStrafeChangeInterval += 0.05f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Increased", Color.red);
-    }
+    // private void MakeMoreStrafe()
+    // {
+    //         roundStrafeSpeed += 0.25f;
+    //         roundStrafeChangeInterval += 0.05f;
 
-    private void MakeRoundSignificantEasier()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange -= 1.5f;
-            roundRetreatRange -= 1.5f;
-            roundSpread += 1.7f;
-            roundDodgeChance -= 0.15f;
-            roundDashSpeed -= 1.5f;
-            roundAwareRadius += 1f;
-            roundStrafeSpeed -= 1f;
-            roundStrafeChangeInterval -= 0.15f;
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed += 0.25f; 
+    //     }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
 
-            roundMoveSpeed -= 0.6f;
-            roundFireRate += 0.3f;       
-            roundDashCooldown += 0.5f;
-            roundBulletForce -= 1.5f;
-        }
-        else
-        {
-            roundAttackRange -= 1.5f;
-            roundRetreatRange -= 1.5f;
-            roundSpread += 1.7f;
-            roundDodgeChance -= 0.15f;
-            roundDashSpeed -= 1.5f;
-            roundAwareRadius += 1f;
-            roundStrafeSpeed -= 1f;
-            roundStrafeChangeInterval -= 0.15f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-        NotifyUI("Difficulty Decreased", Color.darkGreen);
-    }
+    // private void MakeSlightlyMoreStrafe()
+    // {
+    //         roundStrafeSpeed += 0.15f;
+    //         roundStrafeChangeInterval += 0.025f;
 
-    private void MakeRoundModerateEasier()
-    {
-        if (IsNumericalMode())
-        {
-            roundAttackRange -= 1.2f;
-            roundRetreatRange -= 1.2f;
-            roundSpread += 1.2f;
-            roundDodgeChance -= 0.12f;
-            roundDashSpeed -= 1.2f;
-            roundAwareRadius += 0.6f;
-            roundStrafeSpeed -= 0.6f;
-            roundStrafeChangeInterval -= 0.05f;
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed += 0.15f; 
+    //     }
 
-            roundMoveSpeed -= 0.8f;
-            roundFireRate += 0.4f;       
-            roundDashCooldown += 0.55f;
-            roundBulletForce -= 1.6f;
-        }
-        else
-        {
-            roundAttackRange -= 1.2f;
-            roundRetreatRange -= 1.2f;
-            roundSpread += 1.2f;
-            roundDodgeChance -= 0.12f;
-            roundDashSpeed -= 1.2f;
-            roundAwareRadius += 0.6f;
-            roundStrafeSpeed -= 0.6f;
-            roundStrafeChangeInterval -= 0.05f;
-        }
-        ApplyLimits();
-        UpdateActiveEnemies();
-    }
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
+
+    // private void MakeLessStrafe()
+    // {
+    //         roundStrafeSpeed -= 0.25f;
+    //         roundStrafeChangeInterval -= 0.05f;
+
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed -= 0.25f;
+    //     }
+
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Decreased", Color.darkGreen);
+    // }
+
+    // private void MakeSlightlyLessStrafe()
+    // {
+    //         roundStrafeSpeed -= 0.15f;
+    //         roundStrafeChangeInterval -= 0.025f;
+
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed -= 0.15f;
+    //     }
+
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Decreased", Color.darkGreen);
+    // }
+
+    // private void MakeRoundSignificantHarder()
+    // {
+    //         roundAttackRange += 1.5f;
+    //         roundRetreatRange += 1.5f;
+    //         roundSpread -= 1.7f;           
+    //         roundDodgeChance += 0.15f;
+    //         roundDashSpeed += 1.5f;
+    //         roundAwareRadius -= 1f;
+    //         roundStrafeSpeed += 1f;
+    //         roundStrafeChangeInterval += 0.15f;
+
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed += 1f;
+    //         roundFireRate -= 0.5f;       
+    //         roundDashCooldown -= 0.6f;   
+    //         roundBulletForce += 2f;
+    //     }
+
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
+
+    // private void MakeRoundModerateHarder()
+    // {
+    //         roundAttackRange += 1.2f;
+    //         roundRetreatRange += 1.2f;
+    //         roundSpread -= 1.2f;
+    //         roundDodgeChance += 0.12f;
+    //         roundDashSpeed += 1.2f;
+    //         roundAwareRadius -= 0.6f;
+    //         roundStrafeSpeed += 0.6f;
+    //         roundStrafeChangeInterval += 0.05f;
+
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed += 0.8f;
+    //         roundFireRate -= 0.4f;
+    //         roundDashCooldown -= 0.55f;
+    //         roundBulletForce += 1.6f;
+    //     }
+
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Increased", Color.red);
+    // }
+
+    // private void MakeRoundSignificantEasier()
+    // {
+    //         roundAttackRange -= 1.5f;
+    //         roundRetreatRange -= 1.5f;
+    //         roundSpread += 1.7f;
+    //         roundDodgeChance -= 0.15f;
+    //         roundDashSpeed -= 1.5f;
+    //         roundAwareRadius += 1f;
+    //         roundStrafeSpeed -= 1f;
+    //         roundStrafeChangeInterval -= 0.15f;
+
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed -= 0.6f;
+    //         roundFireRate += 0.3f;       
+    //         roundDashCooldown += 0.5f;
+    //         roundBulletForce -= 1.5f;
+    //     }
+
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    //     NotifyUI("Difficulty Decreased", Color.darkGreen);
+    // }
+
+    // private void MakeRoundModerateEasier()
+    // {
+    //         roundAttackRange -= 1.2f;
+    //         roundRetreatRange -= 1.2f;
+    //         roundSpread += 1.2f;
+    //         roundDodgeChance -= 0.12f;
+    //         roundDashSpeed -= 1.2f;
+    //         roundAwareRadius += 0.6f;
+    //         roundStrafeSpeed -= 0.6f;
+    //         roundStrafeChangeInterval -= 0.05f;
+
+    //     if (IsNumericalMode())
+    //     {
+    //         roundMoveSpeed -= 0.8f;
+    //         roundFireRate += 0.4f;       
+    //         roundDashCooldown += 0.55f;
+    //         roundBulletForce -= 1.6f;
+    //     }
+
+    //     ApplyLimits();
+    //     UpdateActiveEnemies();
+    // }
 
     void ApplyLimits()
     {
-        //Fair Limits
+        //Fair/behavioral Limits
         roundAttackRange = Mathf.Clamp(roundAttackRange, 3f, 12f);
         roundRetreatRange = Mathf.Clamp(roundRetreatRange, 1f, 10f);
         roundAwareRadius = Mathf.Clamp(roundAwareRadius, 1f, 8f);
@@ -602,7 +596,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         roundDodgeChance = Mathf.Clamp(roundDodgeChance, 0f, 0.9f);
         roundDashSpeed = Mathf.Clamp(roundDashSpeed, 5f, 20f);
 
-        //Unfair Limits
+        //Unfair/numerical Limits
         roundMoveSpeed = Mathf.Clamp(roundMoveSpeed, 1f, 6f);
         roundFireRate = Mathf.Clamp(roundFireRate, 0.2f, 3.5f);
         roundDashCooldown = Mathf.Clamp(roundDashCooldown, 1f, 4f);
@@ -624,5 +618,13 @@ public class EnemyDifficultyManager : MonoBehaviour
         {
             UIManager.Instance.ShowDDAAlert(message, alertColor);
         }
+    }
+
+    public void ResetMatchDDACounters()
+    {
+        totalHarderInterventions = 0;
+        totalEasierInterventions = 0;
+        totalAccuracyInterventions = 0;
+        totalStrafeInterventions = 0;
     }
 }

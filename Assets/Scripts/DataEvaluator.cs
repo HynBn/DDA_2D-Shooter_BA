@@ -110,13 +110,13 @@ public class DataEvaluator : MonoBehaviour
         float discrepancy = GetHealthDiscrepancy();
 
         //BIG Health Discrepancy, ignore the rest of the adaptation
-        if(discrepancy >= 0.3f)
+        if(discrepancy >= 0.25f)
         {
             OnSignificantHarder?.Invoke();
             return;
         }
 
-        if(discrepancy <= -0.3f)
+        if(discrepancy <= -0.25f)
         {
             OnSignificantEasier?.Invoke();
             return;
@@ -138,7 +138,7 @@ public class DataEvaluator : MonoBehaviour
                 OnSignificantHarder?.Invoke();
                 Debug.Log("INCREASE 1.1: Sig + Accuracy + Strafe");
             }
-            else if (dashEfficiency >= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.3)
+            else if (dashEfficiency >= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.25)
             {
                 OnSlightMoreAccurate?.Invoke();
                 OnMoreStrafe?.Invoke();
@@ -171,7 +171,7 @@ public class DataEvaluator : MonoBehaviour
                 OnModerateHarder?.Invoke();
                 Debug.Log("INCREASE 2.1: Mod + Accuracy + Strafe");
             }
-            else if (dashEfficiency >= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.3)
+            else if (dashEfficiency >= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.25)
             {
                 OnMoreStrafe?.Invoke();
                 OnModerateHarder?.Invoke();
@@ -201,7 +201,7 @@ public class DataEvaluator : MonoBehaviour
                 OnSlightlyHarder?.Invoke();
                 Debug.Log("INCREASE 3.1: Sli + Sli-Accuracy");
             }
-            else if (dashEfficiency >= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.3)
+            else if (dashEfficiency >= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.25)
             {
                 OnSlightMoreStrafe?.Invoke();
                 OnSlightlyHarder?.Invoke();
@@ -257,14 +257,14 @@ public class DataEvaluator : MonoBehaviour
                 OnSignificantEasier?.Invoke();
                 Debug.Log("DECREASE 1.1: Sig - Accuracy - Strafe");
             }
-            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy <  -0.2 && discrepancy > -0.3)
+            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy <  -0.2 && discrepancy > -0.25)
             {
                 OnLessAccurate?.Invoke();
                 OnLessStrafe?.Invoke();
                 OnSignificantEasier?.Invoke();
                 Debug.Log("DECREASE 1.2: Sig - Accuracy - Strafe");
             }
-            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.3)
+            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.25)
             {
                 OnSlightMoreAccurate?.Invoke();
                 OnSlightLessStrafe?.Invoke();
@@ -296,14 +296,14 @@ public class DataEvaluator : MonoBehaviour
                 OnModerateEasier?.Invoke();
                 Debug.Log("DECREASE 2.1: Mod - Accuracy - Strafe");
             }
-            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy <  -0.2 && discrepancy > -0.3)
+            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy <  -0.2 && discrepancy > -0.25)
             {
                 OnLessAccurate?.Invoke();
                 OnLessStrafe?.Invoke();
                 OnModerateEasier?.Invoke();
                 Debug.Log("DECREASE 2.2: Mod - Accuracy - Strafe");
             }
-            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.3)
+            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.25)
             {
                 OnMoreAccurate?.Invoke();
                 OnSlightLessStrafe?.Invoke();
@@ -335,14 +335,14 @@ public class DataEvaluator : MonoBehaviour
                 OnSlightlyEasier?.Invoke();
                 Debug.Log("DECREASE 3.1: Sli - Sli-Accuracy - Sli-Strafe");
             }
-            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy <  -0.2 && discrepancy > -0.3)
+            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy <  -0.2 && discrepancy > -0.25)
             {
                 OnLessAccurate?.Invoke();
                 OnLessStrafe?.Invoke();
                 OnSlightlyEasier?.Invoke();
                 Debug.Log("DECREASE 3.2: Sli - Accuracy - Strafe");
             }
-            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.3)
+            else if (dashEfficiency <= dashEfficiencyLimit && discrepancy > 0.2 && discrepancy < 0.25)
             {
                 OnSlightMoreAccurate?.Invoke();
                 Debug.Log("DECREASE 3.3: Sli-Accuracy");
