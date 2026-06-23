@@ -709,48 +709,26 @@ public class EnemyDifficultyManager : MonoBehaviour
                 break;
 
             default:
-                Debug.LogWarning(
-                    $"Unknown static difficulty: {difficulty}");
                 break;
         }
     }
 
     public void ConfigureDifficultyForMatch()
-{
-    Debug.Log("[DIFF] ConfigureDifficultyForMatch started");
-
-    ResetDifficultyParameters();
-    Debug.Log("[DIFF] ResetDifficultyParameters completed");
-
-    ResetMatchDDACounters();
-    Debug.Log("[DIFF] ResetMatchDDACounters completed");
-
-    if (GameSettings.Instance == null)
     {
-        Debug.LogError("[DIFF] GameSettings.Instance is null");
-        return;
+        ResetDifficultyParameters();
+        ResetMatchDDACounters();
+
+        if (GameSettings.Instance == null)
+        {
+            return;
+        }
+
+        if (GameSettings.Instance.currentDifficultySystem == GameSettings.DifficultySystem.Static)
+        {
+            ApplyStaticDifficulty(GameSettings.Instance.currentStaticDifficulty);
+        }
+
+        ApplyLimits();
+        UpdateActiveEnemies();
     }
-
-    Debug.Log(
-        $"[DIFF] System: {GameSettings.Instance.currentDifficultySystem}");
-
-    if (GameSettings.Instance.currentDifficultySystem ==
-        GameSettings.DifficultySystem.Static)
-    {
-        Debug.Log(
-            $"[DIFF] Applying static difficulty: " +
-            $"{GameSettings.Instance.currentStaticDifficulty}");
-
-        ApplyStaticDifficulty(
-            GameSettings.Instance.currentStaticDifficulty);
-
-        Debug.Log("[DIFF] ApplyStaticDifficulty completed");
-    }
-
-    ApplyLimits();
-    Debug.Log("[DIFF] ApplyLimits completed");
-
-    UpdateActiveEnemies();
-    Debug.Log("[DIFF] UpdateActiveEnemies completed");
-}
 }

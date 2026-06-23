@@ -42,8 +42,6 @@ public class GameManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        Debug.Log("[BOOT] GameManager.Start reached");
-
         currentState = GameState.PreRound;
     }
 
@@ -58,7 +56,6 @@ public class GameManager : MonoBehaviour
 
     public void StartMatch()
     {
-            Debug.Log("[MATCH] GameManager.StartMatch reached");
         playerScore = 0;
         enemyScore = 0;
         currentRound = 1;

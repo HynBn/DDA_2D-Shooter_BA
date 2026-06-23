@@ -86,9 +86,7 @@ public class UIManager : MonoBehaviour
     }
 
     void Start()
-    {
-        Debug.Log("[BOOT] UIManager.Start reached");
-        
+    {        
         int consentStatus = PlayerPrefs.GetInt("TelemetryConsent", 0);
 
         if (consentStatus == 0)
