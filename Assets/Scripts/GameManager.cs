@@ -42,6 +42,8 @@ public class GameManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        Debug.Log("[BOOT] GameManager.Start reached");
+
         currentState = GameState.PreRound;
     }
 
@@ -56,18 +58,33 @@ public class GameManager : MonoBehaviour
 
     public void StartMatch()
     {
+            Debug.Log("[MATCH] GameManager.StartMatch reached");
         playerScore = 0;
         enemyScore = 0;
         currentRound = 1;
-        
+
+        if (GameSettings.Instance != null)
+        {
+            GameSettings.Instance.enemyCount = 1;
+        }
+
+        if (DataTracker.Instance != null)
+        {
+            DataTracker.Instance.ResetInterval();
+            DataTracker.Instance.ResetRoundData();
+        }
+
         if (EnemyDifficultyManager.Instance != null)
         {
-            EnemyDifficultyManager.Instance.ResetMatchDDACounters();
+            EnemyDifficultyManager.Instance.ConfigureDifficultyForMatch();
         }
 
         if (UIManager.Instance != null)
         {
-            UIManager.Instance.UpdateScoreText(playerScore, enemyScore, maxRounds);
+            UIManager.Instance.UpdateScoreText(
+                playerScore,
+                enemyScore,
+                maxRounds);
         }
 
         StartCoroutine(PreRoundSetup());

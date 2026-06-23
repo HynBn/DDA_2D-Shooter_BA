@@ -58,6 +58,11 @@ public class EnemyDifficultyManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
+    private bool IsDDAEnabled()
+    {
+        return GameSettings.Instance != null && GameSettings.Instance.currentDifficultySystem == GameSettings.DifficultySystem.DDA;
+    }
+
     void OnEnable()
     {
         DataEvaluator.OnSignificantHarder += MakeSignificantHarder;
@@ -82,7 +87,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         RoundEvaluator.OnRoundModerateHarder += MakeRoundModerateHarder;
         RoundEvaluator.OnRoundSignificantEasier += MakeRoundSignificantEasier;
         RoundEvaluator.OnRoundModerateEasier += MakeRoundModerateEasier;
-        RoundEvaluator.OnRoundSlightlyEasier += MakeSlightlyEasier;
+        RoundEvaluator.OnRoundSlightlyEasier += MakeRoundSlightlyEasier;
         RoundEvaluator.OnRoundLessStrafe += MakeLessStrafe;
         RoundEvaluator.OnRoundMoreAccurate += MakeMoreAccurate;
     }
@@ -103,7 +108,7 @@ public class EnemyDifficultyManager : MonoBehaviour
         DataEvaluator.OnSlightLessAccurate -= MakeSlightlyLessAccurate;
 
         DataEvaluator.OnMoreStrafe -= MakeMoreStrafe;
-        DataEvaluator.OnSlightMoreStrafe += MakeSlightlyMoreStrafe;
+        DataEvaluator.OnSlightMoreStrafe -= MakeSlightlyMoreStrafe;
         DataEvaluator.OnLessStrafe -= MakeLessStrafe;
         DataEvaluator.OnSlightLessStrafe -= MakeSlightlyLessStrafe;
  
@@ -118,11 +123,16 @@ public class EnemyDifficultyManager : MonoBehaviour
 
     private bool IsNumericalMode()
     {
-        return GameSettings.Instance != null && GameSettings.Instance.currentDDAMode == GameSettings.DDAMode.Numerical;
+        return IsDDAEnabled() && GameSettings.Instance.currentDDAMode == GameSettings.DDAMode.Numerical;
     }
 
     private void AdjustGeneralDifficulty (float multiplier, string notifyMsg, Color color)
     {
+        if (!IsDDAEnabled())
+        {
+            return;
+        }
+
         if(multiplier > 0) totalHarderInterventions++;
         else totalEasierInterventions++;
 
@@ -150,6 +160,11 @@ public class EnemyDifficultyManager : MonoBehaviour
 
     private void AdjustAccuracy (float multiplier, string notifyMsg, Color color)
     {
+        if (!IsDDAEnabled())
+        {
+            return;
+        }
+
         totalAccuracyInterventions++;
         if (multiplier > 0) totalHarderInterventions++;
         else if (multiplier < 0) totalEasierInterventions++;
@@ -164,6 +179,11 @@ public class EnemyDifficultyManager : MonoBehaviour
 
     private void AdjustStrafe (float multiplier, string notifyMsg, Color color)
     {
+        if (!IsDDAEnabled())
+        {
+            return;
+        }
+
         totalStrafeInterventions++;
         if (multiplier > 0) totalHarderInterventions++;
         else if (multiplier < 0) totalEasierInterventions++;
@@ -627,4 +647,110 @@ public class EnemyDifficultyManager : MonoBehaviour
         totalAccuracyInterventions = 0;
         totalStrafeInterventions = 0;
     }
+
+    private void ResetDifficultyParameters()
+    {
+        // Behavioral parameters
+        roundAwareRadius = 8f;
+        roundAttackRange = 7f;
+        roundRetreatRange = 4f;
+        roundSpread = 15f;
+        roundDashSpeed = 10f;
+        roundRetreatDashChance = 0.2f;
+        roundStrafeSpeed = 3f;
+        roundStrafeChangeInterval = 1.5f;
+        roundDodgeChance = 0.8f;
+
+        // Numerical parameters
+        roundMoveSpeed = 3f;
+        roundDashCooldown = 2f;
+        roundBulletForce = 15f;
+        roundFireRate = 2f;
+    }
+
+    private void ApplyStaticDifficulty(GameSettings.StaticDifficulty difficulty)
+    {
+        switch (difficulty)
+        {
+            case GameSettings.StaticDifficulty.Easy:
+                roundAwareRadius = 2.5f;
+                roundAttackRange = 5f;
+                roundRetreatRange = 3f;
+                roundSpread = 28f;
+                roundDashSpeed = 6f;
+                roundRetreatDashChance = 0.03f;
+                roundStrafeSpeed = 0.8f;
+                roundStrafeChangeInterval = 2f;
+                roundDodgeChance = 0.1f;
+                break;
+
+            case GameSettings.StaticDifficulty.Medium:
+                roundAwareRadius = 6f;
+                roundAttackRange = 7f;
+                roundRetreatRange = 4f;
+                roundSpread = 15f;
+                roundDashSpeed = 10f;
+                roundRetreatDashChance = 0.2f;
+                roundStrafeSpeed = 3f;
+                roundStrafeChangeInterval = 1.5f;
+                roundDodgeChance = 0.6f;
+                break;
+
+            case GameSettings.StaticDifficulty.Hard:
+                roundAwareRadius = 8f;
+                roundAttackRange = 8.5f;
+                roundRetreatRange = 5f;
+                roundSpread = 7f;
+                roundDashSpeed = 13f;
+                roundRetreatDashChance = 0.4f;
+                roundStrafeSpeed = 4.5f;
+                roundStrafeChangeInterval = 0.8f;
+                roundDodgeChance = 0.9f;
+                break;
+
+            default:
+                Debug.LogWarning(
+                    $"Unknown static difficulty: {difficulty}");
+                break;
+        }
+    }
+
+    public void ConfigureDifficultyForMatch()
+{
+    Debug.Log("[DIFF] ConfigureDifficultyForMatch started");
+
+    ResetDifficultyParameters();
+    Debug.Log("[DIFF] ResetDifficultyParameters completed");
+
+    ResetMatchDDACounters();
+    Debug.Log("[DIFF] ResetMatchDDACounters completed");
+
+    if (GameSettings.Instance == null)
+    {
+        Debug.LogError("[DIFF] GameSettings.Instance is null");
+        return;
+    }
+
+    Debug.Log(
+        $"[DIFF] System: {GameSettings.Instance.currentDifficultySystem}");
+
+    if (GameSettings.Instance.currentDifficultySystem ==
+        GameSettings.DifficultySystem.Static)
+    {
+        Debug.Log(
+            $"[DIFF] Applying static difficulty: " +
+            $"{GameSettings.Instance.currentStaticDifficulty}");
+
+        ApplyStaticDifficulty(
+            GameSettings.Instance.currentStaticDifficulty);
+
+        Debug.Log("[DIFF] ApplyStaticDifficulty completed");
+    }
+
+    ApplyLimits();
+    Debug.Log("[DIFF] ApplyLimits completed");
+
+    UpdateActiveEnemies();
+    Debug.Log("[DIFF] UpdateActiveEnemies completed");
+}
 }

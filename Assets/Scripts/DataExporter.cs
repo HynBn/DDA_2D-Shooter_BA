@@ -24,13 +24,42 @@ public class DataExporter : MonoBehaviour
         {
             if (!fileExists)
             {
-                sw.WriteLine("Timestamp;Match_Round;DDA_Mode;Enemy_Count;Duration_Sec;Win;HitRate;Damage_Taken;Dashes;DDA_Harder;DDA_Easier;DDA_Aiming;DDA_Strafe");            
+                sw.WriteLine(
+                    "Timestamp;" +
+                    "Match_Round;" +
+                    "Difficulty_System;" +
+                    "Difficulty_Variant;" +
+                    "Duration_Sec;" +
+                    "Win;" +
+                    "HitRate;" +
+                    "Damage_Taken;" +
+                    "Dashes;" +
+                    "DDA_Harder;" +
+                    "DDA_Easier;" +
+                    "DDA_Aiming;" +
+                    "DDA_Strafe");
             }
 
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            string difficultySystem = "Unknown";
+            string difficultyVariant = "Unknown";
+
+            if (GameSettings.Instance != null)
+            {
+                difficultySystem = GameSettings.Instance.currentDifficultySystem.ToString();
+
+                if (GameSettings.Instance.IsDDAEnabled)
+                {
+                    difficultyVariant = GameSettings.Instance.currentDDAMode.ToString();
+                }
+                else
+                {
+                    difficultyVariant = GameSettings.Instance.currentStaticDifficulty.ToString();
+                }
+            }
             string round = GameManager.Instance != null ? GameManager.Instance.currentRound.ToString() : "0";
-            string mode = GameSettings.Instance != null ? GameSettings.Instance.currentDDAMode.ToString() : "Unknown";
-            string enemies = GameSettings.Instance != null ? GameSettings.Instance.enemyCount.ToString() : "1";
+            // string mode = GameSettings.Instance != null ? GameSettings.Instance.currentDDAMode.ToString() : "Unknown";
+            // string enemies = GameSettings.Instance != null ? GameSettings.Instance.enemyCount.ToString() : "1";
             string won = playerWon ? "Yes" : "No";
 
             float hitRate = DataTracker.Instance != null ? DataTracker.Instance.GetRoundPlayerHitRate() : 0f;
@@ -46,7 +75,21 @@ public class DataExporter : MonoBehaviour
             string timeStr = roundTime.ToString("N1");
             string damageStr = damage.ToString("N0");
 
-            string row = $"{timestamp};{round};{mode};{enemies};{timeStr};{won};{hitRateStr};{damageStr};{dashes};{ddaHarder};{ddaEasier};{ddaAim};{ddaStrafe}";            
+            string row =
+                $"{timestamp};" +
+                $"{round};" +
+                $"{difficultySystem};" +
+                $"{difficultyVariant};" +
+                $"{timeStr};" +
+                $"{won};" +
+                $"{hitRateStr};" +
+                $"{damageStr};" +
+                $"{dashes};" +
+                $"{ddaHarder};" +
+                $"{ddaEasier};" +
+                $"{ddaAim};" +
+                $"{ddaStrafe}";    
+
             sw.WriteLine(row);
         }
 

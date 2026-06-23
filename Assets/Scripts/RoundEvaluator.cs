@@ -36,19 +36,34 @@ public class RoundEvaluator : MonoBehaviour
         GameManager.OnRoundEnd -= EvaluateRound;
     }
 
+    private bool IsDDAEnabled()
+    {
+        return GameSettings.Instance != null && GameSettings.Instance.currentDifficultySystem == GameSettings.DifficultySystem.DDA;    
+    }
+
     private void EvaluateRound(float roundTime, bool playerWon)
     {
         if (DataTracker.Instance == null) return;
 
+        if (IsDDAEnabled()) EvaluateDDAAdjustment(roundTime, playerWon);
+
+        if (DataExporter.Instance != null && UIManager.isTelemetryAllowed) DataExporter.Instance.ExportRoundData(roundTime, playerWon);
+
+        DataTracker.Instance.ResetRoundData();
+    }
+
+    private void EvaluateDDAAdjustment(float roundTime, bool playerWon)
+    {
         float damage = DataTracker.Instance.roundDamageTaken;
         float hitRate = DataTracker.Instance.GetRoundPlayerHitRate();
         float shotsFired = DataTracker.Instance.roundShotsFired;
         int totalDashes = DataTracker.Instance.roundTotalDashes;
 
-        int enemyCount = GameSettings.Instance != null ? GameSettings.Instance.enemyCount : 1;
+        int enemyCount = GameSettings.Instance != null ? Mathf.Max(1, GameSettings.Instance.enemyCount) : 1;
+        int additionalEnemies = Mathf.Max(0, enemyCount - 1);
 
-        float currentFastLimit = baseFastTime + (fastTimePerEnemy * enemyCount);
-        float currentSlowLimit = baseSlowTime + (slowTimePerEnemy * enemyCount);
+        float currentFastLimit = baseFastTime + fastTimePerEnemy * additionalEnemies;
+        float currentSlowLimit = baseSlowTime + slowTimePerEnemy * additionalEnemies;
 
         //AFK
         if (!playerWon && roundTime > currentSlowLimit && shotsFired == 0 && totalDashes == 0)
@@ -142,7 +157,5 @@ public class RoundEvaluator : MonoBehaviour
         {
             DataExporter.Instance.ExportRoundData(roundTime, playerWon);
         }
-
-        DataTracker.Instance.ResetRoundData();
     }
 }

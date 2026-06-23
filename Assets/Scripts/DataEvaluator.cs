@@ -47,7 +47,13 @@ public class DataEvaluator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(GameManager.Instance != null && GameManager.Instance.currentState != GameManager.GameState.Playing)
+        if (!IsDDAEnabled())
+        {
+            timer = 0f;
+            return;
+        }
+
+        if (GameManager.Instance == null || GameManager.Instance.currentState != GameManager.GameState.Playing)
         {
             timer = 0f;
             return;
@@ -62,33 +68,91 @@ public class DataEvaluator : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        GameManager.OnRoundStart += HandleRoundStart;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.OnRoundStart -= HandleRoundStart;
+    }
+
+    private void HandleRoundStart(int roundNumber)
+    {
+        timer = 0f;
+        playerTransform = null;
+
+        if (DataTracker.Instance != null)
+        {
+            DataTracker.Instance.ResetInterval();
+        }
+    }
+
+    private bool IsDDAEnabled()
+    {
+        return GameSettings.Instance != null && GameSettings.Instance.currentDifficultySystem == GameSettings.DifficultySystem.DDA;
+    }
+
     private float GetHealthDiscrepancy()
     {
-        if(playerTransform == null)
+        if (playerTransform == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if(playerObj != null) playerTransform = playerObj.transform;
-            else return 0f;
-        }
 
-        Health pHealth = playerTransform.GetComponent<Health>();
-        if(pHealth == null || pHealth.maxHealth <= 0f) return 0f;
-        float playerHPPercent = pHealth.currentHealth / pHealth.maxHealth;
-
-        float highestEnemyHPPercent = 0f;
-        Enemy[] activeEnemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude);
-        foreach(Enemy e in activeEnemies)
-        {
-            if(e != null)
+            if (playerObj != null)
             {
-                Health eHealth = e.GetComponent<Health>();
-                if(eHealth != null && eHealth.maxHealth > 0)
-                {
-                    float hpPercent = eHealth.currentHealth / eHealth.maxHealth;
-                    if(hpPercent > highestEnemyHPPercent) highestEnemyHPPercent = hpPercent;
-                }
+                playerTransform = playerObj.transform;
+            }
+            else
+            {
+                return 0f;
             }
         }
+
+        Health playerHealth = playerTransform.GetComponent<Health>();
+
+        if (playerHealth == null || playerHealth.maxHealth <= 0f)
+        {
+            return 0f;
+        }
+
+        float playerHPPercent = playerHealth.currentHealth / playerHealth.maxHealth;
+
+        float highestEnemyHPPercent = 0f;
+        bool enemyFound = false;
+
+        Enemy[] activeEnemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude);
+
+        foreach (Enemy enemy in activeEnemies)
+        {
+            if (enemy == null)
+            {
+                continue;
+            }
+
+            Health enemyHealth = enemy.GetComponent<Health>();
+
+            if (enemyHealth == null || enemyHealth.maxHealth <= 0f)
+            {
+                continue;
+            }
+
+            enemyFound = true;
+
+            float enemyHPPercent = enemyHealth.currentHealth / enemyHealth.maxHealth;
+
+            if (enemyHPPercent > highestEnemyHPPercent)
+            {
+                highestEnemyHPPercent = enemyHPPercent;
+            }
+        }
+
+        if (!enemyFound)
+        {
+            return 0f;
+        }
+
         return playerHPPercent - highestEnemyHPPercent;
     }
 
@@ -113,12 +177,14 @@ public class DataEvaluator : MonoBehaviour
         if(discrepancy >= 0.25f)
         {
             OnSignificantHarder?.Invoke();
+            DataTracker.Instance.ResetInterval();
             return;
         }
 
         if(discrepancy <= -0.25f)
         {
             OnSignificantEasier?.Invoke();
+            DataTracker.Instance.ResetInterval();
             return;
         }
 
@@ -190,7 +256,7 @@ public class DataEvaluator : MonoBehaviour
             else
             {
                 OnModerateHarder?.Invoke();
-                Debug.Log("INCREASE 2: Sig");
+                Debug.Log("INCREASE 2: Mod");
             }
         }
         else if (hitRate >= lowHitRate && damage <= lowDamage)
@@ -372,7 +438,7 @@ public class DataEvaluator : MonoBehaviour
             OnMoreStrafe?.Invoke();
             Debug.Log("BALANCE 1: - Sli Accuracy + Strafe");
         }
-        else if (hitRate < midHitRate && damage < midDamage)
+        else if (hitRate < midHitRate && damage < midDamage && damage > lowDamage)
         {
             if(discrepancy <= 0.1 && discrepancy >= -0.1)
             {

@@ -73,3 +73,14 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Local Unity generated files
+[Ll]ibrary/
+Library_backup_*/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+UserSettings/
+.DS_Store
+**/.DS_Store
+Assets/_Recovery/

@@ -13,6 +13,8 @@ public class UIManager : MonoBehaviour
     public GameObject mainMenuPanel;
     public GameObject optionsPanel;
     public GameObject selectPanel;
+    public GameObject staticDifficultyPanel;
+    public GameObject ddaModePanel;
     public GameObject hudPanel;
     public GameObject pausePanel;
     public GameObject gameOverPanel;
@@ -85,6 +87,8 @@ public class UIManager : MonoBehaviour
 
     void Start()
     {
+        Debug.Log("[BOOT] UIManager.Start reached");
+        
         int consentStatus = PlayerPrefs.GetInt("TelemetryConsent", 0);
 
         if (consentStatus == 0)
@@ -140,6 +144,42 @@ public class UIManager : MonoBehaviour
         ShowPanel(optionsPanel);
     }
 
+    public void SelectStaticDifficulty(int difficultyIndex)
+    {
+        if (GameSettings.Instance == null)
+        {
+            return;
+        }
+
+        difficultyIndex = Mathf.Clamp(difficultyIndex, 0, 2);
+
+        GameSettings.Instance.currentDifficultySystem = GameSettings.DifficultySystem.Static;
+
+        GameSettings.Instance.currentStaticDifficulty = (GameSettings.StaticDifficulty)difficultyIndex;
+
+        StartGame();
+    }
+
+    public void OpenStaticDifficultySelection()
+    {
+        if (GameSettings.Instance != null)
+        {
+            GameSettings.Instance.currentDifficultySystem = GameSettings.DifficultySystem.Static;
+        }
+
+        ShowPanel(staticDifficultyPanel);
+    }
+
+    public void OpenDDASelection()
+    {
+        if (GameSettings.Instance != null)
+        {
+            GameSettings.Instance.currentDifficultySystem = GameSettings.DifficultySystem.DDA;
+        }
+
+        ShowPanel(ddaModePanel);
+    }
+
     public void BackToMainMenu()
     {
         Time.timeScale = 1f;
@@ -182,6 +222,8 @@ public class UIManager : MonoBehaviour
         if (mainMenuPanel) mainMenuPanel.SetActive(false);
         if (optionsPanel) optionsPanel.SetActive(false);
         if (selectPanel) selectPanel.SetActive(false);
+        if (staticDifficultyPanel) staticDifficultyPanel.SetActive(false);
+        if (ddaModePanel) ddaModePanel.SetActive(false);
         if (hudPanel) hudPanel.SetActive(false);
         if (pausePanel) pausePanel.SetActive(false);
         if (gameOverPanel) gameOverPanel.SetActive(false);
@@ -302,6 +344,8 @@ public class UIManager : MonoBehaviour
 
     public void ShowDDAAlert(string message, Color alertColor)
     {
+        if (GameSettings.Instance == null || !GameSettings.Instance.IsDDAEnabled) return;
+
         if (ddaAlertText != null)
         {
             StopCoroutine("DDAAlertRoutine");
@@ -328,15 +372,18 @@ public class UIManager : MonoBehaviour
         ddaAlertText.gameObject.SetActive(false);
     }
 
-    public void SetDDAModeFromSlider(float value)
+    public void SelectDDAMode(int modeIndex)
     {
-        if (GameSettings.Instance != null)
+        if (GameSettings.Instance == null)
         {
-            if (value == 0f) GameSettings.Instance.currentDDAMode = GameSettings.DDAMode.Behavioral; // Fair
-            else if (value == 1f) GameSettings.Instance.currentDDAMode = GameSettings.DDAMode.Numerical; // Unfair
-            
-            //Debug.Log("DDA Mode is: " + GameSettings.Instance.currentDDAMode);
+            return;
         }
+
+        modeIndex = Mathf.Clamp(modeIndex, 0, 1);
+        GameSettings.Instance.currentDifficultySystem = GameSettings.DifficultySystem.DDA;
+        GameSettings.Instance.currentDDAMode = (GameSettings.DDAMode)modeIndex;
+
+        StartGame();
     }
     
     public void ShowMatchResults(int pScore, int eScore)
