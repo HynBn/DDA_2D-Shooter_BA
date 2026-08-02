@@ -1295,7 +1295,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &224939131
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8082,7 +8082,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 2115963744}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
-        m_MethodName: SetEnemyCount
+        m_MethodName: SelectStaticDifficulty
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -9650,7 +9650,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 2115963744}
         m_TargetAssemblyTypeName: UIManager, Assembly-CSharp
-        m_MethodName: SetEnemyCount
+        m_MethodName: SelectStaticDifficulty
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -11011,7 +11011,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1262423794
 RectTransform:
   m_ObjectHideFlags: 0
@@ -19195,7 +19195,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2101073829
 RectTransform:
   m_ObjectHideFlags: 0

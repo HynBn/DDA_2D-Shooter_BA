@@ -152,10 +152,5 @@ public class RoundEvaluator : MonoBehaviour
                 }
             }
         }
-
-        if (DataExporter.Instance != null && UIManager.isTelemetryAllowed)
-        {
-            DataExporter.Instance.ExportRoundData(roundTime, playerWon);
-        }
     }
 }

@@ -228,6 +228,7 @@ public class UIManager : MonoBehaviour
         if (panelToShow) panelToShow.SetActive(true);
     }
 
+    //scrapped Idea for multiple enemies
     public void SetEnemyCount(int count)
     {
         if (GameSettings.Instance != null)
@@ -342,13 +343,13 @@ public class UIManager : MonoBehaviour
 
     public void ShowDDAAlert(string message, Color alertColor)
     {
-        if (GameSettings.Instance == null || !GameSettings.Instance.IsDDAEnabled) return;
+        // if (GameSettings.Instance == null || !GameSettings.Instance.IsDDAEnabled) return;
 
-        if (ddaAlertText != null)
-        {
-            StopCoroutine("DDAAlertRoutine");
-            StartCoroutine(DDAAlertRoutine(message, alertColor));
-        }
+        // if (ddaAlertText != null)
+        // {
+        //     StopCoroutine("DDAAlertRoutine");
+        //     StartCoroutine(DDAAlertRoutine(message, alertColor));
+        // }
     }
 
     private IEnumerator DDAAlertRoutine(string message, Color alertColor) 
